@@ -93,7 +93,7 @@ int getBatIf(char *p_batIf[], char *p_meshNetwork)
 	FILE* fp1 = popen(cmd1, "r");
 	char line1[100] = {0x0};
 
-	memset(p_batIf, 0, 10*sizeof(*p_batIf));
+	memset(p_batIf, 0, 100*sizeof(*p_batIf));
 
 	if(fgets(line1, sizeof(line1), fp1) != NULL) {
 
@@ -123,7 +123,7 @@ int getBatIpAddr(char *p_batAddr[], char *p_meshNetwork)
 	FILE* fp = popen(cmd, "r");
 	char line[64] = {0x0};
 
-	memset(p_batAddr, 0, 10*sizeof(*p_batAddr));
+	memset(p_batAddr, 0, 100*sizeof(*p_batAddr));
 
 	if(fgets(line, sizeof(line), fp) != NULL)
 		p_batAddr[0] = (char*)malloc(2+strlen(strtok(line,"\n")));
@@ -170,7 +170,7 @@ int getLocalRoutes(char *p_localRoutes[])
 	FILE* fp = popen("ip route", "r");
 	char line[1000];
 
-	memset(p_localRoutes, 0, 10*sizeof(*p_localRoutes));
+	memset(p_localRoutes, 0, 100*sizeof(*p_localRoutes));
 
 	while(fgets(line, sizeof(line), fp) != NULL)
 	{
