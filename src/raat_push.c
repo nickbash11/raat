@@ -2,9 +2,8 @@
 
 void checkBatIf(push *snd)
 {
-	char line[1000] = {0x0};
-	char *p_lineBuf;
 	int i = 0;
+	char line[1000] = {0x0};
 
 	FILE *fp = fopen("/proc/net/route", "r");
 	if( fp == NULL )
@@ -17,7 +16,7 @@ void checkBatIf(push *snd)
 	while(fgets(line, sizeof(line), fp) != NULL)
 	{
 		// there is the tab
-		p_lineBuf = strtok(line, "	");
+		strtok(line, "	");
 		if(strcmp(line, snd->batmanIf) == 0)
 		{
 			i++;

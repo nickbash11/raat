@@ -575,7 +575,7 @@ void removeExpired(pull *rcv, flags *f)
 }
 
 /* http://www.cse.yorku.ca/~oz/hash.html */
-static unsigned long sdbm(char *str)
+unsigned long sdbm(char *str)
 {
 	unsigned long hash = 0;
 	int c;

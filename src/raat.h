@@ -74,5 +74,5 @@ void checkStatus(flags *f, pull *rcv);
 void deleteRoute(pull *rcv, int r, char ip_cmd[]);
 void addRoute(pull *rcv, int r, char ip_cmd[]);
 void removeExpired(pull *rcv, flags *f);
-static unsigned long sdbm(char *str);
+unsigned long sdbm(char *str);
 
