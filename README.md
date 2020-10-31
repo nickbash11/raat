@@ -5,7 +5,7 @@ This is a concept of the dynamic announce mechanism which uses B.A.T.M.A.N. and 
 
 ![Concept of network](https://github.com/nickbash11/raat/blob/master/raat-network.png)
 
-The idea was taken from BMX6/BMX7 mesh daemon, which be able to use a global cloud network and share local networks behind it between each other. So, I decided to do something like that with batman-adv, but without any BGP/OLSR addition protocols.
+The idea was taken from BMX6/BMX7 mesh daemon, which able to use a global cloud network and share local networks behind it between each other. So, I decided to do something like that with batman-adv, but without any BGP/OLSR addition protocols.
 The example of such network presented on the screen above, where batman interface of each node has the mask 172.16.0.0/16 and also has some amount other networks behind it. In this case each node has an additional network with mask 27 with the same (as a cloud) ip address for clarity.
 
 For example, we want the PC2 could reach to the PC4 and back, so we have to do some manupilations with iproute2:
@@ -17,6 +17,7 @@ On the NODE03:
 ```ip route add 172.16.150.0/27 via 172.16.150.1```
 
 Then PC2 and PC4 will be able to see each other, so, the RAAT daemon doing this automatically through A.L.F.R.E.D.
+
 
 
 ```
