@@ -6,7 +6,8 @@ It is a concept of the dynamic announce mechanism which uses B.A.T.M.A.N. and A.
 ![Concept of network](https://github.com/nickbash11/raat/blob/master/raat-network.png)
 
 
-```Usage: raat -i bat0
+```
+Usage: raat -i bat0
 
 	-i	Batman or bridge interface which contains batman
 		interface. This interface's ipv4 address
@@ -20,4 +21,5 @@ It is a concept of the dynamic announce mechanism which uses B.A.T.M.A.N. and A.
 		depends on -s and can be from 1 to 30
 	-t 100	Data type in alfred space, from 0 to 255
 	-D	Enable debug mode
-	-h	Show this help```
+	-h	Show this help
+```
