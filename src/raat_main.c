@@ -1,24 +1,25 @@
 #include "raat.h"
+#include <dirent.h>
 
 void checkArgs(flags *f, push *snd);
 void daemonize(void);
+pid_t proc_find(const char* name);
 
 int main(int argc, char *argv[])
 {
+	// initialize struct memory
 	push *snd = malloc(sizeof(push));
 	flags *f = malloc(sizeof(flags));
 	pull *rcv = NULL;
 
+	// reset structs before using
 	memset(snd, 0, sizeof(*snd));
 	memset(f, 0, sizeof(*f));
-
-//	printf("%d %d %d\n", snd->wanRouteExists, snd->wanPublish, snd->lanPublish);
-//	printf("%d %d %d %d %d\n", f->hflag, f->wflag, f->lflag, f->sflag, f->sleepTime);
 
 	int opt;
 	opterr = 0;
 
-	// initial state for options -s and -b
+	// initial state for options -s, -b and -t 
 	f->sleepTime = 10;
 	f->breakUp = 5;
 	f->dataType = 100;
@@ -75,6 +76,14 @@ int main(int argc, char *argv[])
 	// check arguments
 	checkArgs(f, snd);
 
+	// check for alfred
+	pid_t pid = proc_find("/usr/sbin/alfred");
+	if (pid == -1)
+	{
+		printf("Are you sure that the alfred exists and running?\n");
+		exit(1);
+	}
+
 	// optind is for the extra arguments
 	// which are not parsed
 	for(; optind < argc; optind++){
@@ -101,36 +110,8 @@ int main(int argc, char *argv[])
 		// get local LAN routes (from raat_push.c)
 		getLocalRoutes(snd);
 
-		// open for Alfred's pipe
-		char push[1000];
-		FILE* alfred = popen("alfred -s 100", "w");
-
-		// put unix timestamp first
-		int timestamp = (int)time(NULL);
-		char timestampstr[12];
-		sprintf(timestampstr, "%d*", timestamp);
-		fputs(timestampstr, alfred);
-
-		// put ipv4 address second
-		sprintf(push, "%s*", snd->batmanAddr);
-		fputs(push, alfred);
-
-		if(snd->wanRouteExists == 0 && snd->p_localRoutes[0] == NULL) {
-			fputs("none*", alfred);
-		}
-	
-		if(snd->wanRouteExists == 1) {
-			fputs("default*", alfred);
-		}
-
-		int i = 0;
-		while(snd->p_localRoutes[i] != NULL) {
-			sprintf(push, "%s*", snd->p_localRoutes[i]);
-			fputs(push, alfred);
-			i++;
-		}
-
-		pclose(alfred);
+		// push data to alfred
+		pushData(snd, f);
 
 		// see -s option
 		sleep(f->sleepTime);
@@ -283,57 +264,106 @@ void checkArgs(flags *f, push *snd)
 	}
 }
 
+// https://github.com/pasce/daemon-skeleton-linux-c
 void daemonize(void)
 {
 	pid_t pid;
     
-	/* Fork off the parent process */
+	// Fork off the parent process
 	pid = fork();
     
-	/* An error occurred */
+	// An error occurred 
 	if (pid < 0)
 		exit(EXIT_FAILURE);
     
-	/* Success: Let the parent terminate */
+	// Success: Let the parent terminate 
 	if (pid > 0)
 		exit(EXIT_SUCCESS);
     
-	/* On success: The child process becomes session leader */
+	// On success: The child process becomes session leader 
 	if (setsid() < 0)
 		exit(EXIT_FAILURE);
     
-	/* Catch, ignore and handle signals */
-	/*TODO: Implement a working signal handler */
+	// Catch, ignore and handle signals 
+	// TODO: Implement a working signal handler 
 	signal(SIGCHLD, SIG_IGN);
 	signal(SIGHUP, SIG_IGN);
     
-	/* Fork off for the second time*/
+	// Fork off for the second time
 	pid = fork();
     
-	/* An error occurred */
+	// An error occurred
 	if (pid < 0)
 		exit(EXIT_FAILURE);
     
-	/* Success: Let the parent terminate */
+	// Success: Let the parent terminate
 	if (pid > 0)
 		exit(EXIT_SUCCESS);
     
-	/* Set new file permissions */
+	// Set new file permissions
 	umask(0);
     
-	/* Change the working directory to the root directory */
-	/* or another appropriated directory */
+	// Change the working directory to the root directory
+	// or another appropriated directory
 	chdir("/");
     
-	/* Close all open file descriptors */
+	// Close all open file descriptors
 	int x;
 	for (x = sysconf(_SC_OPEN_MAX); x>=0; x--)
 	{
 		close (x);
 	}
     
-	/* Open the log file */
+	// Open the log file
 	openlog ("raat", LOG_PID, LOG_DAEMON);
 	syslog (LOG_NOTICE, "raat daemon was started.");
+}
+
+/* https://stackoverflow.com/a/6898456/5714268 */
+pid_t proc_find(const char* name) 
+{
+	DIR* dir;
+	struct dirent* ent;
+	char* endptr;
+	char buf[512];
+
+	if (!(dir = opendir("/proc")))
+	{
+		perror("can't open /proc");
+		return -1;
+	}
+
+	while((ent = readdir(dir)) != NULL)
+	{
+		// if endptr is not a null character, the directory is not
+		// entirely numeric, so ignore it 
+		long lpid = strtol(ent->d_name, &endptr, 10);
+		if (*endptr != '\0')
+		{
+			continue;
+		}
+
+		// try to open the cmdline file
+		snprintf(buf, sizeof(buf), "/proc/%ld/cmdline", lpid);
+		FILE* fp = fopen(buf, "r");
+
+		if (fp)
+		{
+			if (fgets(buf, sizeof(buf), fp) != NULL)
+			{
+				// check the first token in the file, the program name 
+				char* first = strtok(buf, " ");
+				if (!strcmp(first, name))
+				{
+					fclose(fp);
+					closedir(dir);
+					return (pid_t)lpid;
+				}
+			}
+			fclose(fp);
+		}
+	}
+	closedir(dir);
+	return -1;
 }
 

@@ -129,9 +129,9 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 	char *p_payloadGap;
 	char payloadToHash[1000] = {0x0};	
 	char line[1000] = {0x0};
-	char alfred_cmd[20] = {0x0};
+	char alfred_cmd[50] = {0x0};
 
-	sprintf(alfred_cmd, "alfred -r %d", f->dataType);
+	sprintf(alfred_cmd, "/usr/sbin/alfred -r %d", f->dataType);
 	FILE* alfred_pipe = popen(alfred_cmd, "r");
 	if(alfred_pipe == NULL)
 	{
@@ -505,9 +505,9 @@ void removeExpired(pull *rcv, flags *f)
 	char line[1000] = {0x0};
 	char ip_cmd[100] = {0x0};
 	int flag, r;
-	char alfred_cmd[20] = {0x0};
+	char alfred_cmd[50] = {0x0};
 
-	sprintf(alfred_cmd, "alfred -r %d", f->dataType);
+	sprintf(alfred_cmd, "/usr/sbin/alfred -r %d", f->dataType);
 
 	for(rcv=nodes_by_mac; rcv != NULL; rcv=rcv->hh2.next)
 	{
@@ -574,7 +574,7 @@ void removeExpired(pull *rcv, flags *f)
 	}
 }
 
-/* http://www.cse.yorku.ca/~oz/hash.html */
+// http://www.cse.yorku.ca/~oz/hash.html
 unsigned long sdbm(char *str)
 {
 	unsigned long hash = 0;

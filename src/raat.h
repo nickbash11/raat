@@ -66,6 +66,7 @@ void checkBatIf(push *snd);
 void getBatIpAddr(push *snd);
 void wanRouteExists(push *snd);
 void getLocalRoutes(push *snd);
+void pushData(push *snd, flags *f);
 
 //pull functions
 void flushRulesRoutes(void);

@@ -33,7 +33,7 @@ void checkBatIf(push *snd)
 	}
 }
 
-/* https://www.geekpage.jp/en/programming/linux-network/get-ipaddr.php */
+// https://www.geekpage.jp/en/programming/linux-network/get-ipaddr.php 
 void getBatIpAddr(push *snd)
 {
 	int fd;
@@ -115,4 +115,50 @@ void getLocalRoutes(push *snd)
 		}
 		pclose(fp);
 	}
+}
+
+void pushData(push *snd, flags *f)
+{
+	// open for Alfred's pipe
+	char push[1000];
+	char alfred_cmd[50] = {0x0};  
+
+	sprintf(alfred_cmd, "/usr/sbin/alfred -s %d", f->dataType);
+
+	FILE* alfred_pipe = popen(alfred_cmd, "w");
+	if(alfred_pipe == NULL)
+	{
+		syslog(LOG_ERR, "Push point 3");
+		syslog(LOG_ERR, "Value of errno: %d", errno);
+		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
+		exit(1);
+	}
+
+	// put unix timestamp first
+	int timestamp = (int)time(NULL);
+	char timestampstr[12];
+	sprintf(timestampstr, "%d*", timestamp);
+	fputs(timestampstr, alfred_pipe);
+
+	// put ipv4 address second
+	sprintf(push, "%s*", snd->batmanAddr);
+	fputs(push, alfred_pipe);
+
+	if(snd->wanRouteExists == 0 && snd->p_localRoutes[0] == NULL) {
+		fputs("none*", alfred_pipe);
+	}
+
+	if(snd->wanRouteExists == 1) {
+		fputs("default*", alfred_pipe);
+	}
+
+	int i = 0;
+	while(snd->p_localRoutes[i] != NULL) {
+		sprintf(push, "%s*", snd->p_localRoutes[i]);
+		fputs(push, alfred_pipe);
+		i++;
+	}
+
+	// close alfred pipe
+	pclose(alfred_pipe);
 }
