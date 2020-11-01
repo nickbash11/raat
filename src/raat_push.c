@@ -11,6 +11,7 @@ void checkBatIf(push *snd)
 		syslog(LOG_ERR, "Push point 0");
 		syslog(LOG_ERR, "Value of errno: %d", errno);
 		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
+		exit(1);
 	}
 
 	while(fgets(line, sizeof(line), fp) != NULL)
@@ -23,6 +24,7 @@ void checkBatIf(push *snd)
 			break;
 		}
 	}
+	fclose(fp);
 
 	if(i == 0)
 	{
@@ -66,6 +68,7 @@ void wanRouteExists(push *snd)
 			syslog(LOG_ERR, "Push point 1");
 			syslog(LOG_ERR, "Value of errno: %d", errno);
 			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
+			exit(1);
 		}
 
 		while(fgets(line, sizeof(line), fp))
@@ -80,6 +83,7 @@ void wanRouteExists(push *snd)
 				snd->wanRouteExists = 1;
 			}
 		}
+		fclose(fp);
 	}
 }
 
@@ -96,6 +100,7 @@ void getLocalRoutes(push *snd)
 			syslog(LOG_ERR, "Push point 2");
 			syslog(LOG_ERR, "Value of errno: %d", errno);
 			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
+			exit(1);
 		}
 
 		memset(snd->p_localRoutes, 0, 100*sizeof(*snd->p_localRoutes));
