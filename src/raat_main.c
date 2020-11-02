@@ -3,6 +3,7 @@
 
 void checkArgs(flags *f, push *snd);
 void daemonize(void);
+int getPid(void);
 pid_t proc_find(const char* name);
 
 int main(int argc, char *argv[])
@@ -77,8 +78,8 @@ int main(int argc, char *argv[])
 	checkArgs(f, snd);
 
 	// check for alfred
-	pid_t pid = proc_find("/usr/sbin/alfred");
-	if (pid == -1)
+	pid_t alfred_pid = proc_find("alfred");
+	if (alfred_pid == -1)
 	{
 		printf("Are you sure that the alfred exists and running?\n");
 		exit(1);
@@ -110,7 +111,7 @@ int main(int argc, char *argv[])
 		// get local LAN routes (from raat_push.c)
 		getLocalRoutes(snd);
 
-		// push data to alfred
+		// push data to alfred (from raat_push.c)
 		pushData(snd, f);
 
 		// see -s option
@@ -295,11 +296,18 @@ void daemonize(void)
 	// An error occurred
 	if (pid < 0)
 		exit(EXIT_FAILURE);
-    
+
 	// Success: Let the parent terminate
 	if (pid > 0)
 		exit(EXIT_SUCCESS);
-    
+
+	// Stop if the process already running
+	if(getPid() != -1)
+	{
+		printf("Check for pid file\n");
+		exit(EXIT_FAILURE);
+	}
+
 	// Set new file permissions
 	umask(0);
     
@@ -319,7 +327,40 @@ void daemonize(void)
 	syslog (LOG_NOTICE, "raat daemon was started.");
 }
 
-/* https://stackoverflow.com/a/6898456/5714268 */
+int getPid(void)
+{
+	char pidStr[10];
+	int pidInt;
+	char *p_pid;
+	char pidFile[20] = "/var/run/raat.pid";
+	FILE* read = fopen(pidFile, "r");
+	if(!read)
+	{
+		FILE *write = fopen(pidFile, "w");
+		fprintf(write, "%d", getpid());
+		fclose(write);
+		return -1;
+	}
+	else
+	{
+		if(fgets(pidStr, sizeof(pidStr), read))
+		{
+			pidInt = strtol(pidStr, &p_pid, 10);
+			fclose(read);
+			return pidInt;
+		}
+		else
+		{
+			fclose(read);
+			FILE *write = fopen(pidFile, "w");
+			fprintf(write, "%d", getpid());
+			fclose(write);
+			return -1;
+		}
+	}
+}
+
+// https://stackoverflow.com/a/6898456/5714268
 pid_t proc_find(const char* name) 
 {
 	DIR* dir;
@@ -353,7 +394,7 @@ pid_t proc_find(const char* name)
 			{
 				// check the first token in the file, the program name 
 				char* first = strtok(buf, " ");
-				if (!strcmp(first, name))
+				if (strstr(first, name))
 				{
 					fclose(fp);
 					closedir(dir);
