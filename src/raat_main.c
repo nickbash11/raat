@@ -3,7 +3,7 @@
 
 void checkArgs(flags *f, push *snd);
 void daemonize(void);
-int getPid(void);
+int setPid(void);
 pid_t proc_find(const char* name);
 
 int main(int argc, char *argv[])
@@ -302,7 +302,7 @@ void daemonize(void)
 		exit(EXIT_SUCCESS);
 
 	// Stop if the process already running
-	if(getPid() != -1)
+	if(setPid() != -1)
 	{
 		printf("Check for pid file\n");
 		exit(EXIT_FAILURE);
@@ -327,7 +327,7 @@ void daemonize(void)
 	syslog (LOG_NOTICE, "raat daemon was started.");
 }
 
-int getPid(void)
+int setPid(void)
 {
 	char pidStr[10];
 	int pidInt;
