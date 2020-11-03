@@ -120,7 +120,6 @@ void getLocalRoutes(push *snd)
 void pushData(push *snd, flags *f)
 {
 	// open for Alfred's pipe
-	char push[1000];
 	char alfred_cmd[50] = {0x0};  
 
 	sprintf(alfred_cmd, "/usr/sbin/alfred -s %d", f->dataType);
@@ -136,13 +135,10 @@ void pushData(push *snd, flags *f)
 
 	// put unix timestamp first
 	int timestamp = (int)time(NULL);
-	char timestampstr[12];
-	sprintf(timestampstr, "%d*", timestamp);
-	fputs(timestampstr, alfred_pipe);
+	fprintf(alfred_pipe, "%d*", timestamp);
 
 	// put ipv4 address second
-	sprintf(push, "%s*", snd->batmanAddr);
-	fputs(push, alfred_pipe);
+	fprintf(alfred_pipe, "%s*", snd->batmanAddr);
 
 	if(snd->wanRouteExists == 0 && snd->p_localRoutes[0] == NULL) {
 		fputs("none*", alfred_pipe);
@@ -154,8 +150,7 @@ void pushData(push *snd, flags *f)
 
 	int i = 0;
 	while(snd->p_localRoutes[i] != NULL) {
-		sprintf(push, "%s*", snd->p_localRoutes[i]);
-		fputs(push, alfred_pipe);
+		fprintf(alfred_pipe, "%s*", snd->p_localRoutes[i]);
 		i++;
 	}
 
