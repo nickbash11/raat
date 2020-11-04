@@ -81,6 +81,11 @@ void wanRouteExists(push *snd)
 			if(strcmp(p_lineBuf, "00000000") == 0 && strcmp(lineBuf, snd->batmanIf) != 0)
 			{
 				snd->wanRouteExists = 1;
+				break;
+			}
+			else
+			{
+				snd->wanRouteExists = 0;
 			}
 		}
 		fclose(fp);
