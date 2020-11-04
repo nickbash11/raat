@@ -191,6 +191,10 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 			// split payload string, the first piece (is unix timestamp)
 			p_payloadGap = strtok(payloadBuf, "*");
 
+			// clear array before using to avoid garbage
+			memset(rcv->p_route_update, 0, sizeof(rcv->p_route_update));
+			memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
+
 			// split payload string, other pieces (routes)
 			int r = -2;
 			while(p_payloadGap != NULL)
@@ -209,6 +213,7 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 				{
 					// add routes to their struct place
 					rcv->p_route_update[r] = malloc(2+strlen(p_payloadGap));
+					memset(rcv->p_route_update[r], 0, 2+strlen(p_payloadGap));
 					strcpy(rcv->p_route_update[r], p_payloadGap);
 
 					// put routes to hashable var
@@ -224,6 +229,9 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 			// split payload string, the first piece (is unix timestamp)
 			p_payloadGap = strtok(payloadBuf, "*");
 
+			// clear array before using to avoid garbage 
+			memset(rcv->p_route_update, 0, sizeof(rcv->p_route_update));
+
 			// split payload string, other pieces (routes)
 			int r = -2;
 			while(p_payloadGap != NULL)
@@ -238,9 +246,6 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 					{
 						goto skip;
 					}
-
-					// clear routes
-					memset(rcv->p_route_update, 0, 100*sizeof(*rcv->p_route_update));
 				}
 				else if(r == -1)
 				{
@@ -250,6 +255,7 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 				{
 					// add routes to their struct place
 					rcv->p_route_update[r] = malloc(2+strlen(p_payloadGap));
+					memset(rcv->p_route_update[r], 0, 2+strlen(p_payloadGap));
 					strcpy(rcv->p_route_update[r], p_payloadGap);
 
 					// put routes to hashable var
@@ -258,7 +264,7 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 				p_payloadGap = strtok(NULL, "*");
 				r++;
 			}
-			// set the has for routes
+			// set the hash for routes
 			rcv->route_hash = sdbm(payloadToHash);
 		}
 		skip:;
@@ -272,141 +278,163 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 void checkStatus(flags *f, pull *rcv)
 {
 	char ip_cmd[100] = {0x0};
-	int flag, ru, rc, r;
+	int r, rc, ru, flag;
 	// get each node
 	for(rcv=nodes_by_mac; rcv != NULL; rcv=rcv->hh2.next)
 	{
 		// if timestamps are not equal
 		if(rcv->node_timestamp != rcv->node_timestamp_tmp)
 		{
-			// set timestamp to current and breakup counter to zero
+			// set the timestamp to new
 			rcv->node_timestamp_tmp = rcv->node_timestamp;
+
+			// if route_hash == route_hash_tmp then routes did no change - clear p_route_update and skip iteration,
+			// otherwise the node got back from dead state and it needs to repair routes and rules - ignore the block below
+			if(rcv->route_hash == rcv->route_hash_tmp && rcv->breakup_count < f->breakUp)
+			{
+				// freeing p_route_update
+				r = 0;
+				while(rcv->p_route_update[r] != NULL)
+				{
+					free(rcv->p_route_update[r]);
+					r++;
+				}
+
+				// set counter to initial state
+				rcv->breakup_count = 0;
+				// skip iteration
+				continue;	
+			}
+
+			// information message if node backed up from dead
+			if(rcv->breakup_count >= f->breakUp)
+			{
+				syslog(LOG_INFO, "%s is alive now", rcv->mac);
+				memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
+			}
+
+			// update old with new value
+			rcv->route_hash_tmp = rcv->route_hash;
+
+			// set counter to initial state
 			rcv->breakup_count = 0;
 
-			// check if routes hash did not change - skip
-			if(rcv->route_hash == rcv->route_hash_tmp)
-			{
-				// check if the node has back after breakup
-				if(rcv->p_route_current[0] != NULL)
-				{
-					continue;
-				}
-			}
-			else
-			{
-				// set new hash number to old
-				rcv->route_hash_tmp = rcv->route_hash;
-			}
-
-			// if there are "none" in the alfred table
+			// if there are no routes this time			
 			if(strcmp(rcv->p_route_update[0], "none") == 0)
 			{
-
-				// clear routes and s->p_route_current[r]
 				r = 0;
 				while(rcv->p_route_current[r] != NULL)
 				{
 					deleteRoute(rcv, r, ip_cmd);
+					free(rcv->p_route_current[r]);
 					r++;
 				}
-				// clear memory
-				memset(rcv->p_route_current, 0, 100*sizeof(*rcv->p_route_current));
-				// go to the next iteration
+				memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
+				// copy 'none' from p_route_update[0] to p_route_current[0]
+				// rcv->p_route_current[0] = malloc(2+strlen(rcv->p_route_update[0]));
+				// memset(rcv->p_route_current[0], 0, 2+strlen(rcv->p_route_update[0]));
+				// strcpy(rcv->p_route_current[0], rcv->p_route_update[0]);
 				continue;
 			}
-			else
-			{
-				/* here below we check for what rules and routes need to delete
-				* first we call the entry from "p_route_current" and compare it between each entry from "p_route_update" one by one
-				* p_route_current[0] --> p_route_update[0]
-				*                    \_> p_route_update[1]
-				*                    \_> p_route_update[2]
-				*/
-				rc = 0;
-				while(rcv->p_route_current[rc] != NULL)
-				{
-					ru = 0;
-					flag = 0;
-					while(rcv->p_route_update[ru] != NULL)
-					{
-						if(strcmp(rcv->p_route_update[ru], rcv->p_route_current[rc]) == 0)
-						{
-							flag++;
-							break;
-						}
-						ru++;
-					}
-					// if the counter "upd" is equal zero, the route is not presented in update array, need to delete from current
-					if(flag == 0)
-					{
-						deleteRoute(rcv, rc, ip_cmd);
-					}
-					rc++;
-				}
 
-				/* here below we check for what rules and routes need to add
-				* first we call the entry from "p_route_update" and compare it between each entry from "p_route_current" one by one
-				* p_route_update[0] --> p_route_current[0]
-				*                   \_> p_route_current[1]
-				*                   \_> p_route_current[2]
-				*/
+			/* here below we check for what rules and routes need to delete
+			* first we call the entry from "p_route_current" and compare it between each entry from "p_route_update" one by one
+			* p_route_current[0] --> p_route_update[0]
+			*                    \_> p_route_update[1]
+			*                    \_> p_route_update[2]
+			*/
+			rc = 0;
+			while(rcv->p_route_current[rc] != NULL)
+			{
 				ru = 0;
+				flag = 0;
 				while(rcv->p_route_update[ru] != NULL)
 				{
-					rc = 0;
-					flag = 0;
-					while(rcv->p_route_current[rc] != NULL)
+					if(strcmp(rcv->p_route_update[ru], rcv->p_route_current[rc]) == 0)
 					{
-						if(strcmp(rcv->p_route_update[ru], rcv->p_route_current[rc]) == 0)
-						{
-							flag++;
-							break;
-						}
-						rc++;
-					}
-					// if the counter "curr" is equal zero, the route is not presented in current array, need to add to current
-					if(flag == 0)
-					{
-						addRoute(rcv, ru, ip_cmd);
+						flag++;
+						break;
 					}
 					ru++;
 				}
-
-				// clear p_route_current
-				memset(rcv->p_route_current, 0, 100*sizeof(*rcv->p_route_current));
-
-				// rewrite p_route_current with p_route_update
-				r = 0;
-				while(rcv->p_route_update[r] != NULL)
+				// if the counter "flag" is equal zero, the route is not presented in update array, need to delete from current
+				if(flag == 0)
 				{
-					rcv->p_route_current[r] = malloc(2+strlen(rcv->p_route_update[r]));
-					strcpy(rcv->p_route_current[r], rcv->p_route_update[r]);
-//					printf("current: %s\n", rcv->p_route_current[r]);
-					r++;
+					deleteRoute(rcv, rc, ip_cmd);
 				}
-
+				rc++;
 			}
+
+			/* here below we check for what rules and routes need to add
+			* first we call the entry from "p_route_update" and compare it between each entry from "p_route_current" one by one
+			* p_route_update[0] --> p_route_current[0]
+			*                   \_> p_route_current[1]
+			*                   \_> p_route_current[2]
+			*/
+			ru = 0;
+			while(rcv->p_route_update[ru] != NULL)
+			{
+				rc = 0;
+				flag = 0;
+				while(rcv->p_route_current[rc] != NULL)
+				{
+					if(strcmp(rcv->p_route_update[ru], rcv->p_route_current[rc]) == 0)
+					{
+						flag++;
+						break;
+					}
+					rc++;
+				}
+				// if the counter "flag" is equal zero, the route is not presented in current array, need to add to current
+				if(flag == 0)
+				{
+					addRoute(rcv, ru, ip_cmd);
+				}
+				ru++;
+			}
+
+			// freeing p_route_current			
+			r = 0;
+			while(rcv->p_route_current[r] != NULL)
+			{
+				free(rcv->p_route_current[r]);
+				r++;
+			}
+
+			// set p_route_current to zero before using
+			memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
+
+			// write p_route_current with p_route_update
+			r = 0;
+			while(rcv->p_route_update[r] != NULL)
+			{
+				rcv->p_route_current[r] = malloc(2+strlen(rcv->p_route_update[r]));
+				memset(rcv->p_route_current[r], 0, 2+strlen(rcv->p_route_update[r]));
+				strcpy(rcv->p_route_current[r], rcv->p_route_update[r]);
+				free(rcv->p_route_update[r]);
+				r++;
+			}
+
 		}
 		else
 		{
 			// here we count how many times the node is not updated
 			rcv->breakup_count++;
-			if(rcv->breakup_count > f->breakUp)
+			if(rcv->breakup_count == f->breakUp)
 			{
-				syslog(LOG_INFO, "%s is dead %d times ago", rcv->mac, rcv->breakup_count);
-				// the node is dead, clear rules from this point
+				// information message
+				syslog(LOG_INFO, "%s is dead now", rcv->mac);
+
+				// clear all
 				r = 0;
 				while(rcv->p_route_current[r] != NULL)
 				{
 					deleteRoute(rcv, r, ip_cmd);
+					free(rcv->p_route_current[r]);
 					r++;
 				}
-
-				if(rcv->p_route_current[0] != NULL)
-				{
-					// clear p_route_current
-					memset(rcv->p_route_current, 0, 100*sizeof(*rcv->p_route_current));
-				}
+				// set p_route_current to zero after using to avoid garbage
+				// memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
 			}
 		}
 	}

@@ -91,7 +91,7 @@ void getLocalRoutes(push *snd)
 {
 	if(snd->lanPublish == 1)
 	{
-		int i = 0;
+		int r;
 		char line[1000];
 
 		FILE* fp = popen("/sbin/ip route", "r");
@@ -103,14 +103,17 @@ void getLocalRoutes(push *snd)
 			exit(1);
 		}
 
-		memset(snd->p_localRoutes, 0, 100*sizeof(*snd->p_localRoutes));
+		// clear garbage before using
+		memset(snd->p_localRoutes, 0, sizeof(snd->p_localRoutes));
 
+		r = 0;
 		while(fgets(line, sizeof(line), fp) != NULL)
 		{
 			if(strstr(line, "br-") != NULL) {
-				snd->p_localRoutes[i] = (char*)malloc(2+strlen(strtok(line, " ")));
-				strcpy(snd->p_localRoutes[i], strtok(line, " "));
-				i++;
+				snd->p_localRoutes[r] = (char*)malloc(2+strlen(strtok(line, " ")));
+				memset(snd->p_localRoutes[r], 0, 2+strlen(strtok(line, " ")));
+				strcpy(snd->p_localRoutes[r], strtok(line, " "));
+				r++;
 			} 
 		}
 		pclose(fp);
@@ -120,6 +123,7 @@ void getLocalRoutes(push *snd)
 void pushData(push *snd, flags *f)
 {
 	// open for Alfred's pipe
+	int r;
 	char alfred_cmd[50] = {0x0};  
 
 	sprintf(alfred_cmd, "/usr/sbin/alfred -s %d", f->dataType);
@@ -148,10 +152,11 @@ void pushData(push *snd, flags *f)
 		fputs("default*", alfred_pipe);
 	}
 
-	int i = 0;
-	while(snd->p_localRoutes[i] != NULL) {
-		fprintf(alfred_pipe, "%s*", snd->p_localRoutes[i]);
-		i++;
+	r = 0;
+	while(snd->p_localRoutes[r] != NULL) {
+		fprintf(alfred_pipe, "%s*", snd->p_localRoutes[r]);
+		free(snd->p_localRoutes[r]);
+		r++;
 	}
 
 	// close alfred pipe
