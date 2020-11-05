@@ -47,6 +47,7 @@ typedef struct {
 	int node_timestamp_tmp;
 	char *p_route_update[100];
 	char *p_route_current[100];
+	int route_current_reset;
 	unsigned long route_hash;
 	unsigned long route_hash_tmp;
 	UT_hash_handle hh1, hh2; 

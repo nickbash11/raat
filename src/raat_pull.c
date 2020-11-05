@@ -193,7 +193,8 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 
 			// clear array before using to avoid garbage
 			memset(rcv->p_route_update, 0, sizeof(rcv->p_route_update));
-			memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
+			//memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
+			rcv->route_current_reset = 1;
 
 			// split payload string, other pieces (routes)
 			int r = -2;
@@ -288,6 +289,13 @@ void checkStatus(flags *f, pull *rcv)
 			// set the timestamp to new
 			rcv->node_timestamp_tmp = rcv->node_timestamp;
 
+			// it needs to avoid catch garbage in p_route_current when it must be NULL
+			if(rcv->route_current_reset == 1)
+			{
+				memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
+				rcv->route_current_reset = 0;
+			}
+
 			// if route_hash == route_hash_tmp then routes did no change - clear p_route_update and skip iteration,
 			// otherwise the node got back from dead state and it needs to repair routes and rules - ignore the block below
 			if(rcv->route_hash == rcv->route_hash_tmp && rcv->breakup_count < f->breakUp)
@@ -310,7 +318,7 @@ void checkStatus(flags *f, pull *rcv)
 			if(rcv->breakup_count >= f->breakUp)
 			{
 				syslog(LOG_INFO, "%s is alive now", rcv->mac);
-				memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
+				//memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
 			}
 
 			// update old with new value
@@ -329,11 +337,8 @@ void checkStatus(flags *f, pull *rcv)
 					free(rcv->p_route_current[r]);
 					r++;
 				}
-				memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
-				// copy 'none' from p_route_update[0] to p_route_current[0]
-				// rcv->p_route_current[0] = malloc(2+strlen(rcv->p_route_update[0]));
-				// memset(rcv->p_route_current[0], 0, 2+strlen(rcv->p_route_update[0]));
-				// strcpy(rcv->p_route_current[0], rcv->p_route_update[0]);
+				//memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
+				rcv->route_current_reset = 1;
 				continue;
 			}
 
@@ -434,6 +439,7 @@ void checkStatus(flags *f, pull *rcv)
 					r++;
 				}
 				// set p_route_current to zero after using to avoid garbage
+				rcv->route_current_reset = 1;
 				// memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
 			}
 		}
