@@ -18,6 +18,7 @@
 #include <arpa/inet.h>
 
 #include "uthash.h"
+#include "utarray.h"
 
 extern int errno;
 
@@ -45,12 +46,11 @@ typedef struct {
 	int breakup_count;
 	int node_timestamp;
 	int node_timestamp_tmp;
-	char *p_route_update[100];
-	char *p_route_current[100];
-	int route_current_reset;
 	unsigned long route_hash;
 	unsigned long route_hash_tmp;
-	UT_hash_handle hh1, hh2; 
+	UT_hash_handle hh1, hh2;
+	UT_array *p_route_announce;
+	UT_array *p_route_main;
 } pull;
 
 typedef struct {
@@ -59,7 +59,7 @@ typedef struct {
 	int wanRouteExists;
 	int wanPublish;
 	int lanPublish;
-	char *p_localRoutes[100];
+	UT_array *p_pushRoutes;
 } push;
 
 //push functions
@@ -73,8 +73,8 @@ void pushData(push *snd, flags *f);
 void flushRulesRoutes(void);
 void getAndSetStruct(push *snd, pull *rcv, flags *f);
 void checkStatus(flags *f, pull *rcv);
-void deleteRoute(pull *rcv, int r, char ip_cmd[]);
-void addRoute(pull *rcv, int r, char ip_cmd[]);
+void deleteRoute(pull *rcv, char **pp_route, char ip_cmd[]);
+void addRoute(pull *rcv, char **pp_route, char ip_cmd[]);
 void removeExpired(pull *rcv, flags *f);
 unsigned long sdbm(char *str);
 

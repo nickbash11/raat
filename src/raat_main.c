@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
 	while(1)
 	{
 		// get if WAN exists (from raat_push.c)
+		utarray_new(snd->p_pushRoutes, &ut_str_icd);
 		wanRouteExists(snd);
 
 		// get local LAN routes (from raat_push.c)
@@ -113,6 +114,7 @@ int main(int argc, char *argv[])
 
 		// push data to alfred (from raat_push.c)
 		pushData(snd, f);
+		utarray_free(snd->p_pushRoutes);
 
 		// see -s option
 		sleep(f->sleepTime);
