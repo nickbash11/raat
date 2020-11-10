@@ -1,5 +1,6 @@
-# raat
-Routing Announcement Alfred Through
+# Routing Announcement Alfred Through
+
+# About
 
 This is a concept of the dynamic announce mechanism which uses B.A.T.M.A.N. and A.L.F.R.E.D. as a background for spreading and getting static routes between MESH nodes without any other dynamic route protocols.
 
