@@ -22,7 +22,7 @@ On the NODE03:
 
 Then PC2 and PC4 will be able to see each other, so, the RAAT daemon doing this automatically through A.L.F.R.E.D.
 
-
+# Command line options
 
 ```
 Usage: raat -i bat0
