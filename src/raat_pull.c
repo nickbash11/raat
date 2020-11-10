@@ -2,6 +2,9 @@
 
 #define DEFAULT_PRIORITY 33333
 #define REGULAR_PRIORITY 30000
+#define NODES_MAX 255
+
+static int nodes_counter = 0;
 
 static pull *nodes_by_rt_table_id = NULL, *nodes_by_mac = NULL;
 
@@ -25,7 +28,7 @@ void flushRulesRoutes(void)
 		syslog(LOG_ERR, "Pull point 0");
 		syslog(LOG_ERR, "Value of errno: %d", errno);
 		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-		exit(1);
+		exit(-1);
 	}
 
 	// here we get numbers of tables for regular routes and flush them
@@ -49,7 +52,7 @@ void flushRulesRoutes(void)
 				syslog(LOG_ERR, "Pull point 1");
 				syslog(LOG_ERR, "Value of errno: %d", errno);
 				syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-				exit(1);
+				exit(-1);
 			}
 			pclose(flush0);
 
@@ -61,7 +64,7 @@ void flushRulesRoutes(void)
 				syslog(LOG_ERR, "Pull point 2");
 				syslog(LOG_ERR, "Value of errno: %d", errno);
 				syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-				exit(1);
+				exit(-1);
 			}
 			pclose(flush1);
 		}
@@ -76,7 +79,7 @@ void flushRulesRoutes(void)
 		syslog(LOG_ERR, "Pull point 3");
 		syslog(LOG_ERR, "Value of errno: %d", errno);
 		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-		exit(1);
+		exit(-1);
 	}
 
 	// here we get numbers of tables for default routes and flush them
@@ -100,7 +103,7 @@ void flushRulesRoutes(void)
 				syslog(LOG_ERR, "Pull point 4");
 				syslog(LOG_ERR, "Value of errno: %d", errno);
 				syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-				exit(1);
+				exit(-1);
 			}
 			pclose(flush0);
 
@@ -112,7 +115,7 @@ void flushRulesRoutes(void)
 				syslog(LOG_ERR, "Pull point 5");
 				syslog(LOG_ERR, "Value of errno: %d", errno);
 				syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-				exit(1);
+				exit(-1);
 			}
 			pclose(flush1);
 		}
@@ -121,14 +124,17 @@ void flushRulesRoutes(void)
 	pclose(rules_read1);
 }
 
-void getAndSetStruct(push *snd, pull *rcv, flags *f)
+void getRoutes(pull *rcv, flags *f)
 {
-	int num;
+	int num, invalid;
 	char macBuf[18] = {0x0};
 	char payloadBuf[1000] = {0x0};
-	char *p_payloadGap;
-	char payloadToHash[1000] = {0x0};	
+	char payloadBufValidate[1000] = {0x0};
+	char routesAnnounce[1000] = {0x0};
 	char line[1000] = {0x0};
+	char ip_cmd[100] = {0x0};
+	char *p_payloadGap;
+	char *p_route;
 	char alfred_cmd[50] = {0x0};
 
 	sprintf(alfred_cmd, "/usr/sbin/alfred -r %d", f->dataType);
@@ -138,19 +144,12 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 		syslog(LOG_ERR, "Pull point 6");
 		syslog(LOG_ERR, "Value of errno: %d", errno);
 		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-		exit(1);
+		exit(-1);
 	}
 
 	while(fgets(line, sizeof(line), alfred_pipe) != NULL)
 	{
-		// skip its own record
-		if(strstr(line, snd->batmanAddr))
-		{
-			continue;
-		}
-
-		// skip lines which less than 50 symbols
-		if(strlen(line) < 50)
+		if(strlen(line) < 50 || strlen(line) > 433)
 		{
 			continue;
 		}
@@ -161,10 +160,34 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 		// copy string with payload info to a buffer
 		snprintf(payloadBuf, strlen(line+24)-4, "%s", line+24);
 
-		// add a new one
+		// copy string with payload info to a validation buffer
+		snprintf(payloadBufValidate, strlen(line+24)-4, "%s", line+24);
+
+		// validate input data for correct containing
+		invalid = 0;
+		if(payloadValidator(payloadBufValidate) != 0)
+		{
+			invalid = 1;
+		}
+
+		// add a new one node
 		HASH_FIND(hh2, nodes_by_mac, macBuf, strlen(macBuf), rcv);
 		if(rcv == NULL)
 		{
+			// if detected invalidations
+			if(invalid == 1)
+			{
+				continue;
+			}
+
+			if(nodes_counter >= NODES_MAX)
+			{
+				continue;
+			}
+
+			// +1 to nodes
+			nodes_counter++;
+
 			// generate a pseudo random number
 			while(1)
 			{
@@ -191,11 +214,6 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 			// split payload string, the first piece (is unix timestamp)
 			p_payloadGap = strtok(payloadBuf, "*");
 
-			// clear array before using to avoid garbage
-			memset(rcv->p_route_update, 0, sizeof(rcv->p_route_update));
-			//memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
-			rcv->route_current_reset = 1;
-
 			// split payload string, other pieces (routes)
 			int r = -2;
 			while(p_payloadGap != NULL)
@@ -204,6 +222,7 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 				{
 					// first string with unix timestamp
 					rcv->node_timestamp = atoi(p_payloadGap);
+					rcv->node_timestamp_previous = rcv->node_timestamp;
 				}
 				else if(r == -1)
 				{
@@ -212,26 +231,55 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 				}
 				else
 				{
-					// add routes to their struct place
-					rcv->p_route_update[r] = malloc(2+strlen(p_payloadGap));
-					memset(rcv->p_route_update[r], 0, 2+strlen(p_payloadGap));
-					strcpy(rcv->p_route_update[r], p_payloadGap);
+					if(strcmp(p_payloadGap, "none") != 0)
+					{
+						// add routes
+						addRoute(rcv, p_payloadGap, ip_cmd);
 
-					// put routes to hashable var
-					strcat(payloadToHash, p_payloadGap);
+						// write routes to structure
+						strcat(rcv->routes, p_payloadGap);
+						strcat(rcv->routes, "*");
+					}
+					else
+					{
+						// copy "none" to previous routes
+						strcat(rcv->routes, p_payloadGap);
+						strcat(rcv->routes, "*");
+						break;
+					}
 				}
 				p_payloadGap = strtok(NULL, "*");
 				r++;
 			}
-			// set the hash for routes
-			rcv->route_hash = sdbm(payloadToHash);
-		} else {
+		}
+		else
+		{
 		// the item exists
+
+			// if the node contains an invalid data then delete all and forget about it
+			if(invalid == 1)
+			{
+				p_route = strtok(rcv->routes, "*");
+				while(p_route != NULL)
+				{
+					if(strcmp(p_route, "none") != 0)
+					{
+						deleteRoute(rcv, p_route, ip_cmd);
+					}					
+					p_route = strtok(NULL, "*");
+				}
+
+				nodes_counter--;
+
+				HASH_DELETE(hh2, nodes_by_mac, rcv);
+				HASH_DELETE(hh1, nodes_by_rt_table_id, rcv);
+				free(rcv);
+
+				continue;
+			}
+
 			// split payload string, the first piece (is unix timestamp)
 			p_payloadGap = strtok(payloadBuf, "*");
-
-			// clear array before using to avoid garbage 
-			memset(rcv->p_route_update, 0, sizeof(rcv->p_route_update));
 
 			// split payload string, other pieces (routes)
 			int r = -2;
@@ -243,10 +291,38 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 					rcv->node_timestamp = atoi(p_payloadGap);
 
 					// if the timestamp status is not updated - no point to update routes, just skip
-					if(rcv->node_timestamp == rcv->node_timestamp_tmp)
+					if(rcv->node_timestamp == rcv->node_timestamp_previous)
 					{
+						rcv->breakup_count++;
+
+						// if breakup more than BREAKUP then delete all the rules and routes
+						if(rcv->breakup_count == f->breakUp)
+						{
+							syslog(LOG_INFO, "%s is dead now", rcv->mac);
+
+							// delete all routes and rules
+							p_route = strtok(rcv->routes, "*");
+							while(p_route != NULL)
+							{
+								if(strcmp(p_route, "none") != 0)
+								{
+									deleteRoute(rcv, p_route, ip_cmd);
+								}
+								p_route = strtok(NULL, "*");
+							}
+							memset(rcv->routes, 0, sizeof(rcv->routes));
+						}
 						goto skip;
 					}
+
+					// the node is back from dead
+					if(rcv->breakup_count >= f->breakUp)
+					{
+						syslog(LOG_INFO, "%s is alive now", rcv->mac);
+					}
+
+					rcv->breakup_count = 0;
+					rcv->node_timestamp_previous = rcv->node_timestamp;
 				}
 				else if(r == -1)
 				{
@@ -254,201 +330,53 @@ void getAndSetStruct(push *snd, pull *rcv, flags *f)
 				}
 				else
 				{
-					// add routes to their struct place
-					rcv->p_route_update[r] = malloc(2+strlen(p_payloadGap));
-					memset(rcv->p_route_update[r], 0, 2+strlen(p_payloadGap));
-					strcpy(rcv->p_route_update[r], p_payloadGap);
+					// checking for what routes need to add
+					if(strstr(rcv->routes, p_payloadGap) == NULL)
+					{
+						if(strcmp(p_payloadGap, "none") != 0)
+						{
+							addRoute(rcv, p_payloadGap, ip_cmd);
+						}
+					}
 
-					// put routes to hashable var
-					strcat(payloadToHash, p_payloadGap);
+					// put the routes to check what to delete further
+					strcat(routesAnnounce, p_payloadGap);
+					strcat(routesAnnounce, "*");
 				}
 				p_payloadGap = strtok(NULL, "*");
 				r++;
 			}
-			// set the hash for routes
-			rcv->route_hash = sdbm(payloadToHash);
+
+			// checking for what routes need to delete
+			p_route = strtok(rcv->routes, "*");
+			while(p_route != NULL)
+			{
+				if(strstr(routesAnnounce, p_route) == NULL)
+				{
+					if(strcmp(p_route, "none") != 0)
+					{
+						deleteRoute(rcv, p_route, ip_cmd);
+					}
+				}
+				p_route = strtok(NULL, "*");
+			}
+
+			// set routes variable to zero
+			memset(rcv->routes, 0, sizeof(rcv->routes));
+			// keep routes for the next cycle
+			strcat(rcv->routes, routesAnnounce);
 		}
 		skip:;
 
-		// hashable variable, reset for every new node
-		payloadToHash[0] = '\0';
+		// reset every time
+		routesAnnounce[0] = '\0';
 	}
-	pclose(alfred_pipe);
+	fclose(alfred_pipe);
 }
 
-void checkStatus(flags *f, pull *rcv)
+void deleteRoute(pull *rcv, char *p_route, char ip_cmd[])
 {
-	char ip_cmd[100] = {0x0};
-	int r, rc, ru, flag;
-	// get each node
-	for(rcv=nodes_by_mac; rcv != NULL; rcv=rcv->hh2.next)
-	{
-		// if timestamps are not equal
-		if(rcv->node_timestamp != rcv->node_timestamp_tmp)
-		{
-			// set the timestamp to new
-			rcv->node_timestamp_tmp = rcv->node_timestamp;
-
-			// it needs to avoid catch garbage in p_route_current when it must be NULL
-			if(rcv->route_current_reset == 1)
-			{
-				memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
-				rcv->route_current_reset = 0;
-			}
-
-			// if route_hash == route_hash_tmp then routes did no change - clear p_route_update and skip iteration,
-			// otherwise the node got back from dead state and it needs to repair routes and rules - ignore the block below
-			if(rcv->route_hash == rcv->route_hash_tmp && rcv->breakup_count < f->breakUp)
-			{
-				// freeing p_route_update
-				r = 0;
-				while(rcv->p_route_update[r] != NULL)
-				{
-					free(rcv->p_route_update[r]);
-					r++;
-				}
-
-				// set counter to initial state
-				rcv->breakup_count = 0;
-				// skip iteration
-				continue;	
-			}
-
-			// information message if node backed up from dead
-			if(rcv->breakup_count >= f->breakUp)
-			{
-				syslog(LOG_INFO, "%s is alive now", rcv->mac);
-				//memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
-			}
-
-			// update old with new value
-			rcv->route_hash_tmp = rcv->route_hash;
-
-			// set counter to initial state
-			rcv->breakup_count = 0;
-
-			// if there are no routes this time			
-			if(strcmp(rcv->p_route_update[0], "none") == 0)
-			{
-				r = 0;
-				while(rcv->p_route_current[r] != NULL)
-				{
-					deleteRoute(rcv, r, ip_cmd);
-					free(rcv->p_route_current[r]);
-					r++;
-				}
-				//memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
-				rcv->route_current_reset = 1;
-				continue;
-			}
-
-			/* here below we check for what rules and routes need to delete
-			* first we call the entry from "p_route_current" and compare it between each entry from "p_route_update" one by one
-			* p_route_current[0] --> p_route_update[0]
-			*                    \_> p_route_update[1]
-			*                    \_> p_route_update[2]
-			*/
-			rc = 0;
-			while(rcv->p_route_current[rc] != NULL)
-			{
-				ru = 0;
-				flag = 0;
-				while(rcv->p_route_update[ru] != NULL)
-				{
-					if(strcmp(rcv->p_route_update[ru], rcv->p_route_current[rc]) == 0)
-					{
-						flag++;
-						break;
-					}
-					ru++;
-				}
-				// if the counter "flag" is equal zero, the route is not presented in update array, need to delete from current
-				if(flag == 0)
-				{
-					deleteRoute(rcv, rc, ip_cmd);
-				}
-				rc++;
-			}
-
-			/* here below we check for what rules and routes need to add
-			* first we call the entry from "p_route_update" and compare it between each entry from "p_route_current" one by one
-			* p_route_update[0] --> p_route_current[0]
-			*                   \_> p_route_current[1]
-			*                   \_> p_route_current[2]
-			*/
-			ru = 0;
-			while(rcv->p_route_update[ru] != NULL)
-			{
-				rc = 0;
-				flag = 0;
-				while(rcv->p_route_current[rc] != NULL)
-				{
-					if(strcmp(rcv->p_route_update[ru], rcv->p_route_current[rc]) == 0)
-					{
-						flag++;
-						break;
-					}
-					rc++;
-				}
-				// if the counter "flag" is equal zero, the route is not presented in current array, need to add to current
-				if(flag == 0)
-				{
-					addRoute(rcv, ru, ip_cmd);
-				}
-				ru++;
-			}
-
-			// freeing p_route_current			
-			r = 0;
-			while(rcv->p_route_current[r] != NULL)
-			{
-				free(rcv->p_route_current[r]);
-				r++;
-			}
-
-			// set p_route_current to zero before using
-			memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
-
-			// write p_route_current with p_route_update
-			r = 0;
-			while(rcv->p_route_update[r] != NULL)
-			{
-				rcv->p_route_current[r] = malloc(2+strlen(rcv->p_route_update[r]));
-				memset(rcv->p_route_current[r], 0, 2+strlen(rcv->p_route_update[r]));
-				strcpy(rcv->p_route_current[r], rcv->p_route_update[r]);
-				free(rcv->p_route_update[r]);
-				r++;
-			}
-
-		}
-		else
-		{
-			// here we count how many times the node is not updated
-			rcv->breakup_count++;
-			if(rcv->breakup_count == f->breakUp)
-			{
-				// information message
-				syslog(LOG_INFO, "%s is dead now", rcv->mac);
-
-				// clear all
-				r = 0;
-				while(rcv->p_route_current[r] != NULL)
-				{
-					deleteRoute(rcv, r, ip_cmd);
-					free(rcv->p_route_current[r]);
-					r++;
-				}
-				// set p_route_current to zero after using to avoid garbage
-				rcv->route_current_reset = 1;
-				// memset(rcv->p_route_current, 0, sizeof(rcv->p_route_current));
-			}
-		}
-	}
-}
-
-void deleteRoute(pull *rcv, int r, char ip_cmd[])
-{
-	sprintf(ip_cmd,"/sbin/ip route del %s via %s table %d", rcv->p_route_current[r], rcv->ipv4, rcv->rt_table_id);
+	sprintf(ip_cmd,"/sbin/ip route del %s via %s table %d", p_route, rcv->ipv4, rcv->rt_table_id);
 	syslog(LOG_INFO, "%s", ip_cmd);
 	FILE *del0 = popen(ip_cmd, "w");
 	if(del0 == NULL)
@@ -456,13 +384,13 @@ void deleteRoute(pull *rcv, int r, char ip_cmd[])
 		syslog(LOG_ERR, "Pull point 7");
 		syslog(LOG_ERR, "Value of errno: %d", errno);
 		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-		exit(1);
+		exit(-1);
 	}
 	pclose(del0);
 
-	if(strcmp(rcv->p_route_current[r], "default") == 0)
+	if(strcmp(p_route, "default") == 0)
 	{
-		sprintf(ip_cmd, "/sbin/ip rule del from all priority %d table %d 2>/dev/null", DEFAULT_PRIORITY, rcv->rt_table_id);
+		sprintf(ip_cmd, "/sbin/ip rule del from all priority %d table %d", DEFAULT_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
 		FILE *del1 = popen(ip_cmd, "w");
 		if(del1 == NULL)
@@ -470,13 +398,13 @@ void deleteRoute(pull *rcv, int r, char ip_cmd[])
 			syslog(LOG_ERR, "Pull point 8");
 			syslog(LOG_ERR, "Value of errno: %d", errno);
 			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-			exit(1);
+			exit(-1);
 		}
 		pclose(del1);
 	}
 	else
 	{
-		sprintf(ip_cmd, "/sbin/ip rule del from all to %s priority %d table %d 2>/dev/null", rcv->p_route_current[r], REGULAR_PRIORITY, rcv->rt_table_id);
+		sprintf(ip_cmd, "/sbin/ip rule del from all to %s priority %d table %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
 		FILE *del2 = popen(ip_cmd, "w");
 		if(del2 == NULL)
@@ -484,15 +412,15 @@ void deleteRoute(pull *rcv, int r, char ip_cmd[])
 			syslog(LOG_ERR, "Pull point 9");
 			syslog(LOG_ERR, "Value of errno: %d", errno);
 			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-			exit(1);
+			exit(-1);
 		}
 		pclose(del2);
 	}
 }
 
-void addRoute(pull *rcv, int r, char ip_cmd[])
+void addRoute(pull *rcv, char *p_route, char ip_cmd[])
 {
-	sprintf(ip_cmd, "/sbin/ip route replace %s via %s table %d", rcv->p_route_update[r], rcv->ipv4, rcv->rt_table_id);
+	sprintf(ip_cmd, "/sbin/ip route replace %s via %s table %d", p_route, rcv->ipv4, rcv->rt_table_id);
 	syslog(LOG_INFO, "%s", ip_cmd);
 	FILE *add0 = popen(ip_cmd, "w");
 	if(add0 == NULL)
@@ -500,13 +428,13 @@ void addRoute(pull *rcv, int r, char ip_cmd[])
 		syslog(LOG_ERR, "Pull point 10");
 		syslog(LOG_ERR, "Value of errno: %d", errno);
 		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-		exit(1);
+		exit(-1);
 	}
 	pclose(add0);
 
-	if(strcmp(rcv->p_route_update[r], "default") == 0)
+	if(strcmp(p_route, "default") == 0)
 	{
-		sprintf(ip_cmd, "/sbin/ip rule add from all priority %d table %d 2>/dev/null", DEFAULT_PRIORITY, rcv->rt_table_id);
+		sprintf(ip_cmd, "/sbin/ip rule add from all priority %d table %d", DEFAULT_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
 		FILE* add1 = popen(ip_cmd, "w");
 		if(add1 == NULL)
@@ -514,13 +442,13 @@ void addRoute(pull *rcv, int r, char ip_cmd[])
 			syslog(LOG_ERR, "Pull point 11");
 			syslog(LOG_ERR, "Value of errno: %d", errno);
 			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-			exit(1);
+			exit(-1);
 		}
 		pclose(add1);
 	}
 	else
 	{
-		sprintf(ip_cmd, "/sbin/ip rule add from all to %s priority %d table %d 2>/dev/null", rcv->p_route_update[r], REGULAR_PRIORITY, rcv->rt_table_id);
+		sprintf(ip_cmd, "/sbin/ip rule add from all to %s priority %d table %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
 		FILE* add2 = popen(ip_cmd, "w");
 		if(add2 == NULL)
@@ -528,7 +456,7 @@ void addRoute(pull *rcv, int r, char ip_cmd[])
 			syslog(LOG_ERR, "Pull point 12");
 			syslog(LOG_ERR, "Value of errno: %d", errno);
 			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-			exit(1);
+			exit(-1);
 		}
 		pclose(add2);
 	}
@@ -536,10 +464,11 @@ void addRoute(pull *rcv, int r, char ip_cmd[])
 
 void removeExpired(pull *rcv, flags *f)
 {
+	int flag;
 	char line[1000] = {0x0};
 	char ip_cmd[100] = {0x0};
-	int flag, r;
 	char alfred_cmd[50] = {0x0};
+	char *p_route;
 
 	sprintf(alfred_cmd, "/usr/sbin/alfred -r %d", f->dataType);
 
@@ -551,7 +480,7 @@ void removeExpired(pull *rcv, flags *f)
 			syslog(LOG_ERR, "Pull point 13");
 			syslog(LOG_ERR, "Value of errno: %d", errno);
 			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-			exit(1);
+			exit(-1);
 		}
 
 		flag = 0;
@@ -573,20 +502,20 @@ void removeExpired(pull *rcv, flags *f)
 				syslog(LOG_ERR, "Pull point 14");
 				syslog(LOG_ERR, "Value of errno: %d", errno);
 				syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-				exit(1);
+				exit(-1);
 			}
 			pclose(flush0);
 
-			r = 0;
-			while(rcv->p_route_current[r])
+			p_route = strtok(rcv->routes, "*");
+			while(p_route != NULL)
 			{
-				if(strstr(rcv->p_route_current[r], "default"))
+				if(strstr(p_route, "default"))
 				{
 					sprintf(ip_cmd, "/sbin/ip rule del from all priority %d lookup %d", DEFAULT_PRIORITY, rcv->rt_table_id);
 				}
 				else
 				{
-					sprintf(ip_cmd, "/sbin/ip rule del from all to %s priority %d lookup %d", rcv->p_route_current[r], REGULAR_PRIORITY, rcv->rt_table_id);
+					sprintf(ip_cmd, "/sbin/ip rule del from all to %s priority %d lookup %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
 				}
 				syslog(LOG_INFO, "%s", ip_cmd);
 				FILE* flush1 = popen(ip_cmd, "w");
@@ -598,25 +527,93 @@ void removeExpired(pull *rcv, flags *f)
 					exit(1);
 				}
 				pclose(flush1);
-				r++;
+				p_route = strtok(NULL, "*");
 			}
+
+
+			// -1 to nodes
+			nodes_counter--;
+
+			// delete and free an unexisting node
 			HASH_DELETE(hh2, nodes_by_mac, rcv);
 			HASH_DELETE(hh1, nodes_by_rt_table_id, rcv);
 			free(rcv);
+
 		}
 		pclose(alfred_pipe);
 	}
 }
 
-// http://www.cse.yorku.ca/~oz/hash.html
-unsigned long sdbm(char *str)
+int payloadValidator(char line[])
 {
-	unsigned long hash = 0;
-	int c;
+	int i, flag, count;
+	long timestamp;
+	char *p_timestamp;
+	char *p_lineBuf;
+	char netmaskBuf[32];
+	struct sockaddr_in sa;
 
-	while ((c = *str++))
-		hash = c + (hash << 6) + (hash << 16) - hash;
-
-	return hash;
+	p_lineBuf = strtok(line, "*");
+	i = -2;
+	while(p_lineBuf != NULL)
+	{
+		if(i == -2)
+		{
+			// check if the string contains 10 symbols
+			if(strlen(p_lineBuf) == 10)
+			{
+				// check that it is really the unix timestamp
+				// convert the string to long type
+				timestamp = strtol(p_lineBuf, &p_timestamp, 10);
+				count = 0;
+				while (timestamp != 0)
+				{
+					timestamp /= 10;
+					++count;
+				}
+				if(count != 10)
+				{
+					return -1;
+				}
+			}
+			else
+			{
+				return -1;
+			}
+		}
+		else if(i == -1)
+		{
+			// if this is an ip address
+			if(inet_pton(AF_INET, p_lineBuf, &(sa.sin_addr)) != 1)
+			{
+				return -1;
+			}
+		}
+		else
+		{
+			// if there is "none" then the next data is incorrect
+			if(i == 0 && strcmp(p_lineBuf, "none") == 0)
+			{
+				flag = 1;
+			}
+			// the data is incorrect
+			else if(flag == 1 && p_lineBuf != NULL)
+			{
+				return -1;
+			}
+			// if this is an ip address
+			else if(strcmp(p_lineBuf, "default") != 0)
+			{
+				snprintf(netmaskBuf, strlen(p_lineBuf)-2, "%s", p_lineBuf);
+				if(inet_pton(AF_INET, netmaskBuf, &(sa.sin_addr)) != 1)
+				{
+					return -1;
+				}
+			}
+		}
+		p_lineBuf = strtok(NULL, "*");
+		i++;
+	}
+	return 0;
 }
 

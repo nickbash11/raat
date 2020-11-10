@@ -39,17 +39,13 @@ typedef struct {
 } flags;
 
 typedef struct {
+	int rt_table_id;
 	char mac[20]; 
-	int rt_table_id; 
 	char ipv4[20];
+	char routes[500];
 	int breakup_count;
 	int node_timestamp;
-	int node_timestamp_tmp;
-	char *p_route_update[100];
-	char *p_route_current[100];
-	int route_current_reset;
-	unsigned long route_hash;
-	unsigned long route_hash_tmp;
+	int node_timestamp_previous;
 	UT_hash_handle hh1, hh2; 
 } pull;
 
@@ -59,7 +55,8 @@ typedef struct {
 	int wanRouteExists;
 	int wanPublish;
 	int lanPublish;
-	char *p_localRoutes[100];
+	char localRoutes[1000];
+	int localRoutesCount;
 } push;
 
 //push functions
@@ -71,10 +68,9 @@ void pushData(push *snd, flags *f);
 
 //pull functions
 void flushRulesRoutes(void);
-void getAndSetStruct(push *snd, pull *rcv, flags *f);
-void checkStatus(flags *f, pull *rcv);
-void deleteRoute(pull *rcv, int r, char ip_cmd[]);
-void addRoute(pull *rcv, int r, char ip_cmd[]);
+void getRoutes(pull *rcv, flags *f);
+void deleteRoute(pull *rcv, char *p_route, char ip_cmd[]);
+void addRoute(pull *rcv, char *p_route, char ip_cmd[]);
 void removeExpired(pull *rcv, flags *f);
-unsigned long sdbm(char *str);
+int payloadValidator(char line[]);
 

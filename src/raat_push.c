@@ -11,7 +11,7 @@ void checkBatIf(push *snd)
 		syslog(LOG_ERR, "Push point 0");
 		syslog(LOG_ERR, "Value of errno: %d", errno);
 		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-		exit(1);
+		exit(-1);
 	}
 
 	while(fgets(line, sizeof(line), fp) != NULL)
@@ -28,8 +28,8 @@ void checkBatIf(push *snd)
 
 	if(i == 0)
 	{
-		syslog(LOG_ERR, "%s does not exist or has no ipv4 address\n", snd->batmanIf);
-		exit(1);
+		fprintf(stderr, "%s does not exist or has no ipv4 address\n", snd->batmanIf);
+		exit(-1);
 	}
 }
 
@@ -68,7 +68,7 @@ void wanRouteExists(push *snd)
 			syslog(LOG_ERR, "Push point 1");
 			syslog(LOG_ERR, "Value of errno: %d", errno);
 			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-			exit(1);
+			exit(-1);
 		}
 
 		while(fgets(line, sizeof(line), fp))
@@ -76,6 +76,7 @@ void wanRouteExists(push *snd)
 			// there is the tab
 			p_lineBuf = strtok(line, "	");
 			sprintf(lineBuf, "%s", p_lineBuf);
+
 			// there is the tab
 			p_lineBuf = strtok(NULL, "	");
 			if(strcmp(p_lineBuf, "00000000") == 0 && strcmp(lineBuf, snd->batmanIf) != 0)
@@ -96,30 +97,33 @@ void getLocalRoutes(push *snd)
 {
 	if(snd->lanPublish == 1)
 	{
-		int r;
-		char line[1000];
+		char line[1000] = {0x0};
+		char *p_lineBuf;
+		snd->localRoutes[0] = '\0';
+		snd->localRoutesCount = 0;
 
-		FILE* fp = popen("/sbin/ip route", "r");
+		FILE* fp = popen("ip route", "r");
 		if( fp == NULL )
 		{
 			syslog(LOG_ERR, "Push point 2");
 			syslog(LOG_ERR, "Value of errno: %d", errno);
 			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-			exit(1);
+			exit(-1);
 		}
 
-		// clear garbage before using
-		memset(snd->p_localRoutes, 0, sizeof(snd->p_localRoutes));
-
-		r = 0;
 		while(fgets(line, sizeof(line), fp) != NULL)
 		{
 			if(strstr(line, "br-") != NULL) {
-				snd->p_localRoutes[r] = (char*)malloc(2+strlen(strtok(line, " ")));
-				memset(snd->p_localRoutes[r], 0, 2+strlen(strtok(line, " ")));
-				strcpy(snd->p_localRoutes[r], strtok(line, " "));
-				r++;
-			} 
+				p_lineBuf = strtok(line, " ");
+				strcat(snd->localRoutes, p_lineBuf);
+				strcat(snd->localRoutes, "*");
+				snd->localRoutesCount++;
+
+				if(snd->localRoutesCount == 10)
+				{
+				break;
+				}
+			}
 		}
 		pclose(fp);
 	}
@@ -128,7 +132,6 @@ void getLocalRoutes(push *snd)
 void pushData(push *snd, flags *f)
 {
 	// open for Alfred's pipe
-	int r;
 	char alfred_cmd[50] = {0x0};  
 
 	sprintf(alfred_cmd, "/usr/sbin/alfred -s %d", f->dataType);
@@ -139,7 +142,7 @@ void pushData(push *snd, flags *f)
 		syslog(LOG_ERR, "Push point 3");
 		syslog(LOG_ERR, "Value of errno: %d", errno);
 		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-		exit(1);
+		exit(-1);
 	}
 
 	// put unix timestamp first
@@ -149,7 +152,7 @@ void pushData(push *snd, flags *f)
 	// put ipv4 address second
 	fprintf(alfred_pipe, "%s*", snd->batmanAddr);
 
-	if(snd->wanRouteExists == 0 && snd->p_localRoutes[0] == NULL) {
+	if(snd->wanRouteExists == 0 && snd->localRoutes == NULL) {
 		fputs("none*", alfred_pipe);
 	}
 
@@ -157,11 +160,9 @@ void pushData(push *snd, flags *f)
 		fputs("default*", alfred_pipe);
 	}
 
-	r = 0;
-	while(snd->p_localRoutes[r] != NULL) {
-		fprintf(alfred_pipe, "%s*", snd->p_localRoutes[r]);
-		free(snd->p_localRoutes[r]);
-		r++;
+	if(strcmp(snd->localRoutes, "\0"))
+	{
+		fprintf(alfred_pipe, "%s", snd->localRoutes);
 	}
 
 	// close alfred pipe

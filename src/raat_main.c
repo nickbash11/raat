@@ -118,8 +118,7 @@ int main(int argc, char *argv[])
 		sleep(f->sleepTime);
 
 		// pull data (from raat_pull.c)
-		getAndSetStruct(snd, rcv, f);
-		checkStatus(f, rcv);
+		getRoutes(rcv, f);
 		removeExpired(rcv, f);
 	}
 
