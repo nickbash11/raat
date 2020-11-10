@@ -10,7 +10,7 @@ It uses [UTHASH](https://troydhanson.github.io/uthash/) macros header to hold th
 
 ## How it works
 
-The example of such network presented on the screen below, where the batman interface of each node has the mask 172.16.0.0/16. In this case each node has also an additional network with mask 27 with the same (as a cloud) ip address for clarity, it might have any network mask.
+The example of such network presented on the screen below, where the batman interface (bat0) of each node has the mask 172.16.0.0/16. In this case each node has also an additional local network (br-lan) with mask 27 with the same (as a cloud) ip address for clarity, it might have any network mask.
 
 ![Concept of network](https://github.com/nickbash11/raat/blob/master/raat-network.png)
 
