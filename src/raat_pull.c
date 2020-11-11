@@ -524,7 +524,7 @@ void removeExpired(pull *rcv, flags *f)
 					syslog(LOG_ERR, "Pull point 15");
 					syslog(LOG_ERR, "Value of errno: %d", errno);
 					syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-					exit(1);
+					exit(-1);
 				}
 				pclose(flush1);
 				p_route = strtok(NULL, "*");
