@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 	if (alfred_pid == -1)
 	{
 		printf("Are you sure that the alfred exists and running?\n");
-		exit(1);
+		exit(-1);
 	}
 
 	// optind is for the extra arguments
