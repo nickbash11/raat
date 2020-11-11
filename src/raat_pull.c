@@ -6,6 +6,8 @@
 #define MAX_ALFRED_LENGTH 433
 #define NODES_MAX 255
 
+void errCatchFunc(FILE *pipe, int point);
+
 static int nodes_counter = 0;
 
 static pull *nodes_by_rt_table_id = NULL, *nodes_by_mac = NULL;
@@ -25,13 +27,7 @@ void flushRulesRoutes(void)
 
 	// open pipe for reading
 	FILE* rules_read0 = popen("/sbin/ip rule", "r");
-	if(rules_read0 == NULL)                        
-	{
-		syslog(LOG_ERR, "Pull point 0");
-		syslog(LOG_ERR, "Value of errno: %d", errno);
-		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-		exit(-1);
-	}
+	errCatchFunc(rules_read0, 0);
 
 	// here we get numbers of tables for regular routes and flush them
 	// also we flush rules
@@ -49,25 +45,13 @@ void flushRulesRoutes(void)
 			sprintf(ip_cmd, "/sbin/ip route flush table %s", p_lineBuf);
 			syslog(LOG_INFO, "%s", ip_cmd);
 			FILE* flush0 = popen(ip_cmd, "w");
-			if(flush0 == NULL)
-			{
-				syslog(LOG_ERR, "Pull point 1");
-				syslog(LOG_ERR, "Value of errno: %d", errno);
-				syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-				exit(-1);
-			}
+			errCatchFunc(flush0, 1);
 			pclose(flush0);
 
 			sprintf(ip_cmd, "/sbin/ip rule del %s", lineBuf);
 			syslog(LOG_INFO, "%s", ip_cmd);
 			FILE* flush1 = popen(ip_cmd, "w");
-			if(flush1 == NULL)
-			{
-				syslog(LOG_ERR, "Pull point 2");
-				syslog(LOG_ERR, "Value of errno: %d", errno);
-				syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-				exit(-1);
-			}
+			errCatchFunc(flush1, 2);
 			pclose(flush1);
 		}
 	}
@@ -76,13 +60,7 @@ void flushRulesRoutes(void)
 
 	// open pipe for reading
 	FILE* rules_read1 = popen("/sbin/ip rule", "r");
-	if(rules_read1 == NULL)
-	{
-		syslog(LOG_ERR, "Pull point 3");
-		syslog(LOG_ERR, "Value of errno: %d", errno);
-		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-		exit(-1);
-	}
+	errCatchFunc(rules_read1, 3);
 
 	// here we get numbers of tables for default routes and flush them
 	// also we flush rules
@@ -100,25 +78,13 @@ void flushRulesRoutes(void)
 			sprintf(ip_cmd, "/sbin/ip route flush table %s", p_lineBuf);
 			syslog(LOG_INFO, "%s", ip_cmd);
 			FILE* flush0 = popen(ip_cmd, "w");
-			if(flush0 == NULL)
-			{
-				syslog(LOG_ERR, "Pull point 4");
-				syslog(LOG_ERR, "Value of errno: %d", errno);
-				syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-				exit(-1);
-			}
+			errCatchFunc(flush0, 4);
 			pclose(flush0);
 
 			sprintf(ip_cmd, "/sbin/ip rule del %s", lineBuf);
 			syslog(LOG_INFO, "%s", ip_cmd);
 			FILE* flush1 = popen(ip_cmd, "w");
-			if(flush1 == NULL)
-			{
-				syslog(LOG_ERR, "Pull point 5");
-				syslog(LOG_ERR, "Value of errno: %d", errno);
-				syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-				exit(-1);
-			}
+			errCatchFunc(flush1, 5);
 			pclose(flush1);
 		}
 	}
@@ -141,13 +107,7 @@ void getRoutes(pull *rcv, flags *f)
 
 	sprintf(alfred_cmd, "/usr/sbin/alfred -r %d", f->dataType);
 	FILE* alfred_pipe = popen(alfred_cmd, "r");
-	if(alfred_pipe == NULL)
-	{
-		syslog(LOG_ERR, "Pull point 6");
-		syslog(LOG_ERR, "Value of errno: %d", errno);
-		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-		exit(-1);
-	}
+	errCatchFunc(alfred_pipe, 6);
 
 	while(fgets(line, sizeof(line), alfred_pipe) != NULL)
 	{
@@ -384,13 +344,7 @@ void deleteRoute(pull *rcv, char *p_route, char ip_cmd[])
 	sprintf(ip_cmd,"/sbin/ip route del %s via %s table %d", p_route, rcv->ipv4, rcv->rt_table_id);
 	syslog(LOG_INFO, "%s", ip_cmd);
 	FILE *del0 = popen(ip_cmd, "w");
-	if(del0 == NULL)
-	{
-		syslog(LOG_ERR, "Pull point 7");
-		syslog(LOG_ERR, "Value of errno: %d", errno);
-		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-		exit(-1);
-	}
+	errCatchFunc(del0, 7);
 	pclose(del0);
 
 	if(strcmp(p_route, "default") == 0)
@@ -398,13 +352,7 @@ void deleteRoute(pull *rcv, char *p_route, char ip_cmd[])
 		sprintf(ip_cmd, "/sbin/ip rule del from all priority %d table %d", DEFAULT_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
 		FILE *del1 = popen(ip_cmd, "w");
-		if(del1 == NULL)
-		{
-			syslog(LOG_ERR, "Pull point 8");
-			syslog(LOG_ERR, "Value of errno: %d", errno);
-			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-			exit(-1);
-		}
+		errCatchFunc(del1, 8);
 		pclose(del1);
 	}
 	else
@@ -412,13 +360,7 @@ void deleteRoute(pull *rcv, char *p_route, char ip_cmd[])
 		sprintf(ip_cmd, "/sbin/ip rule del from all to %s priority %d table %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
 		FILE *del2 = popen(ip_cmd, "w");
-		if(del2 == NULL)
-		{
-			syslog(LOG_ERR, "Pull point 9");
-			syslog(LOG_ERR, "Value of errno: %d", errno);
-			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-			exit(-1);
-		}
+		errCatchFunc(del2, 9);
 		pclose(del2);
 	}
 }
@@ -428,13 +370,7 @@ void addRoute(pull *rcv, char *p_route, char ip_cmd[])
 	sprintf(ip_cmd, "/sbin/ip route replace %s via %s table %d", p_route, rcv->ipv4, rcv->rt_table_id);
 	syslog(LOG_INFO, "%s", ip_cmd);
 	FILE *add0 = popen(ip_cmd, "w");
-	if(add0 == NULL)
-	{
-		syslog(LOG_ERR, "Pull point 10");
-		syslog(LOG_ERR, "Value of errno: %d", errno);
-		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-		exit(-1);
-	}
+	errCatchFunc(add0, 10);
 	pclose(add0);
 
 	if(strcmp(p_route, "default") == 0)
@@ -442,13 +378,7 @@ void addRoute(pull *rcv, char *p_route, char ip_cmd[])
 		sprintf(ip_cmd, "/sbin/ip rule add from all priority %d table %d", DEFAULT_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
 		FILE* add1 = popen(ip_cmd, "w");
-		if(add1 == NULL)
-		{
-			syslog(LOG_ERR, "Pull point 11");
-			syslog(LOG_ERR, "Value of errno: %d", errno);
-			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-			exit(-1);
-		}
+		errCatchFunc(add1, 11);
 		pclose(add1);
 	}
 	else
@@ -456,13 +386,7 @@ void addRoute(pull *rcv, char *p_route, char ip_cmd[])
 		sprintf(ip_cmd, "/sbin/ip rule add from all to %s priority %d table %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
 		FILE* add2 = popen(ip_cmd, "w");
-		if(add2 == NULL)
-		{
-			syslog(LOG_ERR, "Pull point 12");
-			syslog(LOG_ERR, "Value of errno: %d", errno);
-			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-			exit(-1);
-		}
+		errCatchFunc(add2, 12);
 		pclose(add2);
 	}
 }
@@ -480,13 +404,7 @@ void removeExpired(pull *rcv, flags *f)
 	for(rcv=nodes_by_mac; rcv != NULL; rcv=rcv->hh2.next)
 	{
 		FILE* alfred_pipe = popen(alfred_cmd, "r");
-		if(alfred_pipe == NULL)
-		{
-			syslog(LOG_ERR, "Pull point 13");
-			syslog(LOG_ERR, "Value of errno: %d", errno);
-			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-			exit(-1);
-		}
+		errCatchFunc(alfred_pipe, 13);
 
 		flag = 0;
 		while(fgets(line, sizeof(line), alfred_pipe) != NULL)
@@ -502,13 +420,7 @@ void removeExpired(pull *rcv, flags *f)
 			sprintf(ip_cmd, "/sbin/ip route flush table %d", rcv->rt_table_id);
 			syslog(LOG_INFO, "%s", ip_cmd);
 			FILE* flush0 = popen(ip_cmd, "w");
-			if(flush0 == NULL)
-			{
-				syslog(LOG_ERR, "Pull point 14");
-				syslog(LOG_ERR, "Value of errno: %d", errno);
-				syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-				exit(-1);
-			}
+			errCatchFunc(flush0, 14);
 			pclose(flush0);
 
 			p_route = strtok(rcv->routes, "*");
@@ -524,13 +436,7 @@ void removeExpired(pull *rcv, flags *f)
 				}
 				syslog(LOG_INFO, "%s", ip_cmd);
 				FILE* flush1 = popen(ip_cmd, "w");
-				if(flush1 == NULL)
-				{
-					syslog(LOG_ERR, "Pull point 15");
-					syslog(LOG_ERR, "Value of errno: %d", errno);
-					syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-					exit(-1);
-				}
+				errCatchFunc(flush0, 15);
 				pclose(flush1);
 				p_route = strtok(NULL, "*");
 			}
@@ -620,5 +526,17 @@ int payloadValidator(char line[])
 		i++;
 	}
 	return 0;
+}
+
+// catch for errors
+void errCatchFunc(FILE *pipe, int point)
+{
+	if(pipe == NULL)
+	{
+		syslog(LOG_ERR, "Pull point %d", point);
+		syslog(LOG_ERR, "Value of errno: %d", errno);
+		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
+		exit(-1);
+	}
 }
 
