@@ -2,6 +2,8 @@
 
 #define DEFAULT_PRIORITY 33333
 #define REGULAR_PRIORITY 30000
+#define MIN_ALFRED_LENGTH 50
+#define MAX_ALFRED_LENGTH 433
 #define NODES_MAX 255
 
 static int nodes_counter = 0;
@@ -149,7 +151,7 @@ void getRoutes(pull *rcv, flags *f)
 
 	while(fgets(line, sizeof(line), alfred_pipe) != NULL)
 	{
-		if(strlen(line) < 50 || strlen(line) > 433)
+		if(strlen(line) < MIN_ALFRED_LENGTH || strlen(line) > MAX_ALFRED_LENGTH)
 		{
 			continue;
 		}
@@ -269,12 +271,15 @@ void getRoutes(pull *rcv, flags *f)
 					p_route = strtok(NULL, "*");
 				}
 
+				// -1 to nodes
 				nodes_counter--;
 
+				// free memory
 				HASH_DELETE(hh2, nodes_by_mac, rcv);
 				HASH_DELETE(hh1, nodes_by_rt_table_id, rcv);
 				free(rcv);
 
+				// continue to the next iteration
 				continue;
 			}
 
