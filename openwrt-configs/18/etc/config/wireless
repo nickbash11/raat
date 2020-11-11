@@ -1,0 +1,17 @@
+
+config wifi-device 'radio0'
+        option type 'mac80211'
+        option channel '6'
+        option hwmode '11n'
+        option path 'virtual/mac80211_hwsim/hwsim0'
+        option disabled '0'
+
+config wifi-iface 'wlan0'
+        option device 'radio0'
+        option mode 'mesh'
+        option mesh_id 'test'
+        option network 'mesh_w0'
+        option ifname 'wlan0'
+        option mesh-fwding '0'
+        option macaddr '00:00:00:dd:aa:cc'
+
