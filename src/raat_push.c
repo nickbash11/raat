@@ -1,5 +1,8 @@
 #include "raat.h"
 
+#define MAX_ROUTES 10
+#define FIND_LAN_STR "br-"
+
 void checkBatIf(push *snd)
 {
 	int i = 0;
@@ -113,15 +116,15 @@ void getLocalRoutes(push *snd)
 
 		while(fgets(line, sizeof(line), fp) != NULL)
 		{
-			if(strstr(line, "br-") != NULL) {
+			if(strstr(line, FIND_LAN_STR) != NULL) {
 				p_lineBuf = strtok(line, " ");
 				strcat(snd->localRoutes, p_lineBuf);
 				strcat(snd->localRoutes, "*");
 				snd->localRoutesCount++;
 
-				if(snd->localRoutesCount == 10)
+				if(snd->localRoutesCount == MAX_ROUTES)
 				{
-				break;
+					break;
 				}
 			}
 		}
