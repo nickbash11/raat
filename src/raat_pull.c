@@ -103,6 +103,7 @@ void getRoutes(pull *rcv, flags *f)
 	char ip_cmd[100] = {0x0};
 	char *p_payloadGap;
 	char *p_route;
+	char *p_timestamp;
 	char alfred_cmd[50] = {0x0};
 
 	sprintf(alfred_cmd, "/usr/sbin/alfred -r %d", f->dataType);
@@ -186,7 +187,7 @@ void getRoutes(pull *rcv, flags *f)
 				if(r == -2)
 				{
 					// first string with unix timestamp
-					rcv->node_timestamp = atoi(p_payloadGap);
+					rcv->node_timestamp = strtol(p_payloadGap, &p_timestamp, 10);
 					rcv->node_timestamp_previous = rcv->node_timestamp;
 				}
 				else if(r == -1)
@@ -259,7 +260,7 @@ void getRoutes(pull *rcv, flags *f)
 				if(r == -2)
 				{
 					// first string with unix timestamp
-					rcv->node_timestamp = atoi(p_payloadGap);
+					rcv->node_timestamp = strtol(p_payloadGap, &p_timestamp, 10);
 
 					// if the timestamp status is not updated - no point to update routes, just skip
 					if(rcv->node_timestamp == rcv->node_timestamp_previous)
