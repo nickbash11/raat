@@ -31,11 +31,8 @@ typedef struct {
 	int tflag;
 	int Dflag;
 	int breakUp;
-	char *p_breakUp;
 	int dataType;
-	char *p_dataType;
 	int sleepTime;
-	char *p_sleepTime;
 } flags;
 
 typedef struct {

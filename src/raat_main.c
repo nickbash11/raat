@@ -8,6 +8,8 @@ pid_t proc_find(const char* name);
 
 int main(int argc, char *argv[])
 {
+	char *p_argvTmp;
+
 	// initialize struct memory
 	push *snd = malloc(sizeof(push));
 	flags *f = malloc(sizeof(flags));
@@ -41,15 +43,15 @@ int main(int argc, char *argv[])
 				break;
 			case 's':
 				f->sflag = 1;
-				f->sleepTime = strtol(optarg, &f->p_sleepTime, 10);
+				f->sleepTime = strtol(optarg, &p_argvTmp, 10);
 				break;
 			case 'b':
 				f->bflag = 1;
-				f->breakUp = strtol(optarg, &f->p_breakUp, 10);
+				f->breakUp = strtol(optarg, &p_argvTmp, 10);
 				break;
 			case 't':
 				f->tflag = 1;
-				f->dataType = strtol(optarg, &f->p_dataType, 10);
+				f->dataType = strtol(optarg, &p_argvTmp, 10);
 				break;
 			case 'D':
 				f->Dflag = 1;
