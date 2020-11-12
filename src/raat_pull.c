@@ -173,6 +173,9 @@ void getRoutes(pull *rcv, flags *f)
 			HASH_ADD(hh1, nodes_by_rt_table_id, rt_table_id, sizeof(int), rcv);
 			HASH_ADD(hh2, nodes_by_mac, mac, strlen(rcv->mac), rcv);
 
+			// send info about
+			syslog(LOG_INFO, "%s is a new node", rcv->mac);
+
 			// split payload string, the first piece (is unix timestamp)
 			p_payloadGap = strtok(payloadBuf, "*");
 
@@ -221,6 +224,9 @@ void getRoutes(pull *rcv, flags *f)
 			// if the node contains an invalid data then delete all and forget about it
 			if(invalid == 1)
 			{
+				// send info about delete
+				syslog(LOG_INFO, "%s is invalid", rcv->mac);
+
 				p_route = strtok(rcv->routes, "*");
 				while(p_route != NULL)
 				{
@@ -234,7 +240,7 @@ void getRoutes(pull *rcv, flags *f)
 				// -1 to nodes
 				nodes_counter--;
 
-				// free memory
+				// freeing memory
 				HASH_DELETE(hh2, nodes_by_mac, rcv);
 				HASH_DELETE(hh1, nodes_by_rt_table_id, rcv);
 				free(rcv);
@@ -422,6 +428,9 @@ void removeExpired(pull *rcv, flags *f)
 			FILE* flush0 = popen(ip_cmd, "w");
 			errCatchFunc(flush0, 14);
 			pclose(flush0);
+
+			// send info about delete
+			syslog(LOG_INFO, "%s does not exist anymore", rcv->mac);
 
 			p_route = strtok(rcv->routes, "*");
 			while(p_route != NULL)
