@@ -17,8 +17,8 @@ void flushRulesRoutes(void)
 	char line[1000] = {0x0};
 	char defaultPriorityBuf[10] = {0x0};
 	char regularPriorityBuf[10] = {0x0};
-	char lineBuf[1000] = {0x0};
-	char ip_cmd[100] = {0x0};
+	char lineBuf[100] = {0x0};
+	char ip_cmd[200] = {0x0};
 	char *p_lineBuf;
 
 	// convert integer to string
