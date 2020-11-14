@@ -343,7 +343,7 @@ void getRoutes(pull *rcv, flags *f)
 		// reset every time
 		routesAnnounce[0] = '\0';
 	}
-	fclose(alfred_pipe);
+	pclose(alfred_pipe);
 }
 
 void deleteRoute(pull *rcv, char *p_route, char ip_cmd[])
