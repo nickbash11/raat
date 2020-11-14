@@ -476,6 +476,7 @@ int payloadValidator(char line[])
 
 	p_lineBuf = strtok(line, "*");
 	i = -2;
+	flag = 0;
 	while(p_lineBuf != NULL)
 	{
 		if(i == -2)
