@@ -92,7 +92,7 @@ void flushRulesRoutes(void)
 	pclose(rules_read1);
 }
 
-void getRoutes(pull *rcv, flags *f)
+void getRoutes(push *snd, pull *rcv, flags *f)
 {
 	int num, invalid;
 	char macBuf[18] = {0x0};
@@ -112,6 +112,13 @@ void getRoutes(pull *rcv, flags *f)
 
 	while(fgets(line, sizeof(line), alfred_pipe) != NULL)
 	{
+		// skip its own record
+		if(strstr(line, snd->batmanAddr))
+		{
+			continue;
+		}
+
+		// ignore too short or too long lines
 		if(strlen(line) < MIN_ALFRED_LENGTH || strlen(line) > MAX_ALFRED_LENGTH)
 		{
 			continue;

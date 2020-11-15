@@ -65,7 +65,7 @@ void pushData(push *snd, flags *f);
 
 //pull functions
 void flushRulesRoutes(void);
-void getRoutes(pull *rcv, flags *f);
+void getRoutes(push *snd, pull *rcv, flags *f);
 void deleteRoute(pull *rcv, char *p_route, char ip_cmd[]);
 void addRoute(pull *rcv, char *p_route, char ip_cmd[]);
 void removeExpired(pull *rcv, flags *f);
