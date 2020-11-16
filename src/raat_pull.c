@@ -474,16 +474,18 @@ void removeExpired(pull *rcv, flags *f)
 
 int payloadValidator(char line[])
 {
-	int i, flag, count;
+	int i, flag, defflag, count;
 	long timestamp;
 	char *p_timestamp;
 	char *p_lineBuf;
 	char netmaskBuf[32];
 	struct sockaddr_in sa;
 
-	p_lineBuf = strtok(line, "*");
 	i = -2;
 	flag = 0;
+	defflag = 0;
+
+	p_lineBuf = strtok(line, "*");
 	while(p_lineBuf != NULL)
 	{
 		if(i == -2)
@@ -530,7 +532,16 @@ int payloadValidator(char line[])
 			{
 				return -1;
 			}
-			// if this is an ip address
+			// if the default record occurs more than one time
+			else if(strcmp(p_lineBuf, "default") == 0)
+			{
+				defflag++;
+				if(defflag > 1)
+				{
+					return -1;
+				}
+			}
+			// if this is not an ip address
 			else if(strcmp(p_lineBuf, "default") != 0)
 			{
 				snprintf(netmaskBuf, strlen(p_lineBuf)-2, "%s", p_lineBuf);
