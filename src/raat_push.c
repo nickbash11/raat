@@ -163,7 +163,7 @@ void pushData(push *snd, flags *f)
 		fputs("default*", alfred_pipe);
 	}
 
-	if(strcmp(snd->localRoutes, "\0"))
+	if(strcmp(snd->localRoutes, "\0") != 0)
 	{
 		fprintf(alfred_pipe, "%s", snd->localRoutes);
 	}
