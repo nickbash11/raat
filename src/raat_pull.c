@@ -1,10 +1,17 @@
 #include "raat.h"
 
+// the define for default rule priority in iproute2 table
 #define DEFAULT_PRIORITY 33333
+// the define for regular rule priority in iproute2 table
 #define REGULAR_PRIORITY 30000
-#define MIN_ALFRED_LENGTH 50
-#define MAX_ALFRED_LENGTH 433
+// a minimal length of the string from alfred
+#define MIN_ALFRED_LENGTH_STRING 50
+// a maximum length of the string from alfred
+#define MAX_ALFRED_LENGTH_STRING 433
+// the max amount of nodes keeps in uthash
 #define NODES_MAX 255
+// the name of label for DEFAULT_LABEL presence on node
+#define DEFAULT_LABEL "default"
 
 void setDefaultRule(pull *rcv, flags *f, char ip_cmd[]);
 void deleteRoute(pull *rcv, char *p_route, char ip_cmd[]);
@@ -124,7 +131,7 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 		}
 
 		// ignore too short or too long lines
-		if(strlen(line) < MIN_ALFRED_LENGTH || strlen(line) > MAX_ALFRED_LENGTH)
+		if(strlen(line) < MIN_ALFRED_LENGTH_STRING || strlen(line) > MAX_ALFRED_LENGTH_STRING)
 		{
 			continue;
 		}
@@ -380,7 +387,7 @@ void setDefaultRule(pull *rcv, flags *f, char ip_cmd[])
 
 		// find for default and set TQ variable if the default string was found
 		rcv->tqDefault = 0;
-		if(strstr(rcv->routes, "default") && rcv->breakup_count < f->breakUp)
+		if(strstr(rcv->routes, DEFAULT_LABEL) && rcv->breakup_count < f->breakUp)
 		{
 			rcv->tqDefault = getTQ(rcv->mac);
 		}
@@ -446,7 +453,7 @@ void deleteRoute(pull *rcv, char *p_route, char ip_cmd[])
 	errCatchFunc(del0, 9);
 	pclose(del0);
 
-	if(strcmp(p_route, "default") != 0)
+	if(strcmp(p_route, DEFAULT_LABEL) != 0)
 	{
 		sprintf(ip_cmd, "/sbin/ip rule del from all to %s priority %d table %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
@@ -464,7 +471,7 @@ void addRoute(pull *rcv, char *p_route, char ip_cmd[])
 	errCatchFunc(add0, 11);
 	pclose(add0);
 
-	if(strcmp(p_route, "default") != 0)
+	if(strcmp(p_route, DEFAULT_LABEL) != 0)
 	{
 		sprintf(ip_cmd, "/sbin/ip rule add from all to %s priority %d table %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
@@ -512,7 +519,7 @@ void removeExpired(pull *rcv, flags *f)
 			p_route = strtok(rcv->routes, "*");
 			while(p_route != NULL)
 			{
-				if(strstr(p_route, "default") && rcv->isDefault == 1)
+				if(strstr(p_route, DEFAULT_LABEL) && rcv->isDefault == 1)
 				{
 					sprintf(ip_cmd, "/sbin/ip rule del from all priority %d lookup %d", DEFAULT_PRIORITY, rcv->rt_table_id);
 				}
@@ -602,7 +609,7 @@ int payloadValidator(char line[])
 				return -1;
 			}
 			// if the default record occurs more than one time
-			else if(strcmp(p_lineBuf, "default") == 0)
+			else if(strcmp(p_lineBuf, DEFAULT_LABEL) == 0)
 			{
 				defflag++;
 				if(defflag > 1)
@@ -611,7 +618,7 @@ int payloadValidator(char line[])
 				}
 			}
 			// if this is not an ip address
-			else if(strcmp(p_lineBuf, "default") != 0)
+			else if(strcmp(p_lineBuf, DEFAULT_LABEL) != 0)
 			{
 				snprintf(netmaskBuf, strlen(p_lineBuf)-2, "%s", p_lineBuf);
 				if(inet_pton(AF_INET, netmaskBuf, &(sa.sin_addr)) != 1)
