@@ -21,6 +21,7 @@
 
 extern int errno;
 
+// the structure which keeps the command line flags
 typedef struct {
 	int iflag;
 	int hflag;
@@ -35,17 +36,21 @@ typedef struct {
 	int sleepTime;
 } flags;
 
+// the structure which keeps all information about every node in cloud
 typedef struct {
 	int rt_table_id;
 	char mac[20]; 
 	char ipv4[20];
 	char routes[500];
+	int tqDefault;
+	int isDefault;
 	int breakup_count;
 	int node_timestamp;
 	int node_timestamp_previous;
 	UT_hash_handle hh1, hh2; 
 } pull;
 
+// the stucture which keeps the information about the local routes to push and other local etc
 typedef struct {
 	char batmanIf[15];
 	char batmanAddr[32];
@@ -56,18 +61,15 @@ typedef struct {
 	int localRoutesCount;
 } push;
 
-//push functions
+// common push functions
 void checkBatIf(push *snd);
 void getBatIpAddr(push *snd);
 void wanRouteExists(push *snd);
 void getLocalRoutes(push *snd);
 void pushData(push *snd, flags *f);
 
-//pull functions
+// common pull functions
 void flushRulesRoutes(void);
 void getRoutes(push *snd, pull *rcv, flags *f);
-void deleteRoute(pull *rcv, char *p_route, char ip_cmd[]);
-void addRoute(pull *rcv, char *p_route, char ip_cmd[]);
 void removeExpired(pull *rcv, flags *f);
-int payloadValidator(char line[]);
 
