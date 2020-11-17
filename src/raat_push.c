@@ -102,8 +102,11 @@ void getLocalRoutes(push *snd)
 	{
 		char line[1000] = {0x0};
 		char *p_lineBuf;
-		snd->localRoutes[0] = '\0';
+
+		// set counter to zero
 		snd->localRoutesCount = 0;
+		// reset localRoutes to NULL
+		memset(snd->localRoutes, 0, sizeof(snd->localRoutes));
 
 		// open the pipe for ip
 		FILE* fp = popen("ip route", "r");
@@ -141,8 +144,10 @@ void pushData(push *snd, flags *f)
 	// open for Alfred's pipe
 	char alfred_cmd[50] = {0x0};  
 
+	// put the number of data type to the alfred pipe
 	sprintf(alfred_cmd, "/usr/sbin/alfred -s %d", f->dataType);
 
+	// open the alfred pipe to push
 	FILE* alfred_pipe = popen(alfred_cmd, "w");
 	if(alfred_pipe == NULL)
 	{
@@ -160,12 +165,14 @@ void pushData(push *snd, flags *f)
 	fprintf(alfred_pipe, "%s*", snd->batmanAddr);
 
 	// put "none" if there are neither wan nor routes
-	if(snd->wanRouteExists == 0 && snd->localRoutes == NULL) {
+	if(snd->wanRouteExists == 0 && snd->localRoutes == NULL)
+	{
 		fputs("none*", alfred_pipe);
 	}
 
 	// put "default" if there is the wan
-	if(snd->wanRouteExists == 1) {
+	if(snd->wanRouteExists == 1)
+	{
 		fputs("default*", alfred_pipe);
 	}
 

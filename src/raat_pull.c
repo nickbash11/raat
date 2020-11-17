@@ -301,6 +301,7 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 								}
 								p_route = strtok(NULL, "*");
 							}
+							// reset routes to NULL
 							memset(rcv->routes, 0, sizeof(rcv->routes));
 						}
 						goto skip;
@@ -352,7 +353,7 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 				p_route = strtok(NULL, "*");
 			}
 
-			// set routes variable to zero
+			// reset routes to NULL
 			memset(rcv->routes, 0, sizeof(rcv->routes));
 			// keep routes for the next cycle
 			strcat(rcv->routes, routesAnnounce);
@@ -360,7 +361,7 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 		skip:;
 
 		// reset every time
-		routesAnnounce[0] = '\0';
+		memset(routesAnnounce, 0, sizeof(routesAnnounce));		
 	}
 	// close alfred pipe
 	pclose(alfred_pipe);
