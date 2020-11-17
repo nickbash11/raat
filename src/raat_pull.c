@@ -156,12 +156,15 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 		HASH_FIND(hh2, nodes_by_mac, macBuf, strlen(macBuf), rcv);
 		if(rcv == NULL)
 		{
+		// this condition is for a new node
+
 			// if detected invalidations
 			if(invalid == 1)
 			{
 				continue;
 			}
 
+			// check for exceed amount of nodes
 			if(nodes_counter >= NODES_MAX)
 			{
 				continue;
@@ -239,7 +242,7 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 		}
 		else
 		{
-		// the item exists
+		// this condition is for the exists node
 
 			// if the node contains an invalid data then delete all and forget about it
 			if(invalid == 1)
@@ -253,8 +256,18 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 					if(strcmp(p_route, "none") != 0)
 					{
 						deleteRoute(rcv, p_route, ip_cmd);
-					}					
+					}
 					p_route = strtok(NULL, "*");
+				}
+
+				// if there is the default route flag, then this rule needs to delete too
+				if(rcv->isDefault == 1)
+				{
+					sprintf(ip_cmd, "ip rule del from all priority %d table %d", DEFAULT_PRIORITY, rcv->rt_table_id);
+					syslog(LOG_INFO, "%s", ip_cmd);
+					FILE* delrule = popen(ip_cmd, "w");
+					errCatchFunc(delrule, 18);
+					pclose(delrule);
 				}
 
 				// -1 to nodes
@@ -331,7 +344,7 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 						}
 					}
 
-					// put the routes to check what to delete further
+					// put the routes to check for what to delete further
 					strcat(routesAnnounce, p_payloadGap);
 					strcat(routesAnnounce, "*");
 				}
