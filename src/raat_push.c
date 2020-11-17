@@ -105,6 +105,7 @@ void getLocalRoutes(push *snd)
 		snd->localRoutes[0] = '\0';
 		snd->localRoutesCount = 0;
 
+		// open the pipe for ip
 		FILE* fp = popen("ip route", "r");
 		if( fp == NULL )
 		{
@@ -114,14 +115,17 @@ void getLocalRoutes(push *snd)
 			exit(-1);
 		}
 
+		// if the line is not NULL then
 		while(fgets(line, sizeof(line), fp) != NULL)
 		{
+			// find FIND_LAN_STR and assign it to snd->localRoutes
 			if(strstr(line, FIND_LAN_STR) != NULL) {
 				p_lineBuf = strtok(line, " ");
 				strcat(snd->localRoutes, p_lineBuf);
 				strcat(snd->localRoutes, "*");
 				snd->localRoutesCount++;
 
+				// the condition for the max quantity of local routes to push
 				if(snd->localRoutesCount == MAX_ROUTES)
 				{
 					break;
@@ -155,15 +159,18 @@ void pushData(push *snd, flags *f)
 	// put ipv4 address second
 	fprintf(alfred_pipe, "%s*", snd->batmanAddr);
 
+	// put "none" if there are neither wan nor routes
 	if(snd->wanRouteExists == 0 && snd->localRoutes == NULL) {
 		fputs("none*", alfred_pipe);
 	}
 
+	// put "default" if there is the wan
 	if(snd->wanRouteExists == 1) {
 		fputs("default*", alfred_pipe);
 	}
 
-	if(strcmp(snd->localRoutes, "\0") != 0)
+	// put the other routes if they exist
+	if(snd->localRoutes != NULL)
 	{
 		fprintf(alfred_pipe, "%s", snd->localRoutes);
 	}
