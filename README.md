@@ -4,9 +4,9 @@
 
 This is a concept of the dynamic announce mechanism which uses B.A.T.M.A.N. and A.L.F.R.E.D. as a background for spreading and getting static routes between MESH nodes without any other dynamic route protocols.
 
-The idea was taken from BMX6/BMX7 mesh daemon, which is able to use a global cloud network and share local networks behind those between each other. So, I decided to do something like that with batman-adv, but nothing BGP/OLSR addition protocols.
+The idea was taken from BMX6/BMX7 mesh daemon, which is able to use a global cloud network and share local networks behind them between each other. So, I decided to do something like that with batman-adv, but nothing BGP/OLSR addition protocols.
 
-It uses [UTHASH](https://troydhanson.github.io/uthash/) macros header to hold the information about nodes and routes in memory.
+It uses [UTHASH](https://troydhanson.github.io/uthash/) macros header to implement holding the information about nodes and routes in memory.
 
 ## How it works
 
