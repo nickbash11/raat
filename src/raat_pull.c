@@ -6,6 +6,11 @@
 #define MAX_ALFRED_LENGTH 433
 #define NODES_MAX 255
 
+void setDefaultRule(pull *rcv, flags *f, char ip_cmd[]);
+void deleteRoute(pull *rcv, char *p_route, char ip_cmd[]);
+void addRoute(pull *rcv, char *p_route, char ip_cmd[]);
+int payloadValidator(char line[]);
+int getTQ(char *macAddr);
 void errCatchFunc(FILE *pipe, int point);
 
 static int nodes_counter = 0;
@@ -350,7 +355,87 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 		// reset every time
 		routesAnnounce[0] = '\0';
 	}
+	// close alfred pipe
 	pclose(alfred_pipe);
+
+	// call a function to evaluate and set the default rule for default route	
+	setDefaultRule(rcv, f, ip_cmd);
+}
+
+void setDefaultRule(pull *rcv, flags *f, char ip_cmd[])
+{
+	int tqTmp = 0;
+	int suitableDefaultId = 0;
+	int previousDefaultId = 0;
+
+	int i = 0;
+	// iterate every node
+	for(rcv=nodes_by_mac; rcv != NULL; rcv=rcv->hh2.next)
+	{
+		// who was the previous default route
+		if(rcv->isDefault == 1)
+		{
+			previousDefaultId = rcv->rt_table_id;
+		}
+
+		// find for default and set TQ variable if the default string was found
+		rcv->tqDefault = 0;
+		if(strstr(rcv->routes, "default") && rcv->breakup_count < f->breakUp)
+		{
+			rcv->tqDefault = getTQ(rcv->mac);
+		}
+		else
+		{
+			continue;
+		}
+
+		// evaluate the best quality default route
+		if(rcv->tqDefault != 0)
+		{
+			if(i == 0)
+			{
+				tqTmp = rcv->tqDefault;
+				suitableDefaultId = rcv->rt_table_id;
+			}
+			if (tqTmp < rcv->tqDefault)
+			{
+				tqTmp = rcv->tqDefault;
+				suitableDefaultId = rcv->rt_table_id;
+			}
+			i++;
+		}
+	}
+
+	// if the previous default rule is not suitable anymore, then delete the rule for it
+	if(previousDefaultId != suitableDefaultId && previousDefaultId != 0)
+	{
+		HASH_FIND(hh1, nodes_by_rt_table_id, &previousDefaultId, sizeof(previousDefaultId), rcv);
+		if(rcv != NULL)
+		{
+			sprintf(ip_cmd, "ip rule del from all priority %d table %d", DEFAULT_PRIORITY, rcv->rt_table_id);
+			syslog(LOG_INFO, "%s", ip_cmd);
+			FILE* delrule = popen(ip_cmd, "w");
+			errCatchFunc(delrule, 7);
+			pclose(delrule);
+			rcv->isDefault = 0;
+		}
+	}
+
+	// find and add rule for suitable default route if it is not added yet
+	// if the 'suitableDefaultId' is 0 then the search will not give anything, so there is no default route
+	HASH_FIND(hh1, nodes_by_rt_table_id, &suitableDefaultId, sizeof(suitableDefaultId), rcv);
+	if(rcv != NULL)
+	{
+		if(rcv->isDefault == 0)
+		{
+			sprintf(ip_cmd, "ip rule add from all priority %d table %d", DEFAULT_PRIORITY, rcv->rt_table_id);
+			syslog(LOG_INFO, "%s", ip_cmd);
+			FILE* addrule = popen(ip_cmd, "w");
+			errCatchFunc(addrule, 8);
+			pclose(addrule);
+			rcv->isDefault = 1;
+		}
+	}
 }
 
 void deleteRoute(pull *rcv, char *p_route, char ip_cmd[])
@@ -358,23 +443,15 @@ void deleteRoute(pull *rcv, char *p_route, char ip_cmd[])
 	sprintf(ip_cmd,"/sbin/ip route del %s via %s table %d", p_route, rcv->ipv4, rcv->rt_table_id);
 	syslog(LOG_INFO, "%s", ip_cmd);
 	FILE *del0 = popen(ip_cmd, "w");
-	errCatchFunc(del0, 7);
+	errCatchFunc(del0, 9);
 	pclose(del0);
 
-	if(strcmp(p_route, "default") == 0)
-	{
-		sprintf(ip_cmd, "/sbin/ip rule del from all priority %d table %d", DEFAULT_PRIORITY, rcv->rt_table_id);
-		syslog(LOG_INFO, "%s", ip_cmd);
-		FILE *del1 = popen(ip_cmd, "w");
-		errCatchFunc(del1, 8);
-		pclose(del1);
-	}
-	else
+	if(strcmp(p_route, "default") != 0)
 	{
 		sprintf(ip_cmd, "/sbin/ip rule del from all to %s priority %d table %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
 		FILE *del2 = popen(ip_cmd, "w");
-		errCatchFunc(del2, 9);
+		errCatchFunc(del2, 10);
 		pclose(del2);
 	}
 }
@@ -384,18 +461,10 @@ void addRoute(pull *rcv, char *p_route, char ip_cmd[])
 	sprintf(ip_cmd, "/sbin/ip route replace %s via %s table %d", p_route, rcv->ipv4, rcv->rt_table_id);
 	syslog(LOG_INFO, "%s", ip_cmd);
 	FILE *add0 = popen(ip_cmd, "w");
-	errCatchFunc(add0, 10);
+	errCatchFunc(add0, 11);
 	pclose(add0);
 
-	if(strcmp(p_route, "default") == 0)
-	{
-		sprintf(ip_cmd, "/sbin/ip rule add from all priority %d table %d", DEFAULT_PRIORITY, rcv->rt_table_id);
-		syslog(LOG_INFO, "%s", ip_cmd);
-		FILE* add1 = popen(ip_cmd, "w");
-		errCatchFunc(add1, 11);
-		pclose(add1);
-	}
-	else
+	if(strcmp(p_route, "default") != 0)
 	{
 		sprintf(ip_cmd, "/sbin/ip rule add from all to %s priority %d table %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
@@ -443,7 +512,7 @@ void removeExpired(pull *rcv, flags *f)
 			p_route = strtok(rcv->routes, "*");
 			while(p_route != NULL)
 			{
-				if(strstr(p_route, "default"))
+				if(strstr(p_route, "default") && rcv->isDefault == 1)
 				{
 					sprintf(ip_cmd, "/sbin/ip rule del from all priority %d lookup %d", DEFAULT_PRIORITY, rcv->rt_table_id);
 				}
@@ -555,6 +624,50 @@ int payloadValidator(char line[])
 		i++;
 	}
 	return 0;
+}
+
+int getTQ(char *macAddr)
+{
+	char batctl_cmd[100] = {0x0};
+	char batctl_line[100] = {0x0};
+	char originatorStr[100] = {0x0};
+	char *ptr;
+	char TQstr[100] = {0x0};
+	int TQint = 0;
+
+	// converting bat mac address to originator mac address
+	sprintf(batctl_cmd, "/usr/sbin/batctl t %s", macAddr);
+	FILE* batctl_pipe = popen(batctl_cmd, "r");
+	errCatchFunc(batctl_pipe, 16);
+	if(fgets(batctl_line, sizeof(batctl_line), batctl_pipe))
+	{
+		// adding '*' to the gotten originator mac address
+		sprintf(originatorStr, "* %s", strtok(batctl_line, "\n"));
+		// show BATMAN table 
+		FILE* batctl_pipe2 = popen("/usr/sbin/batctl o -H", "r");
+		errCatchFunc(batctl_pipe, 17);
+		while(fgets(batctl_line, sizeof(batctl_line), batctl_pipe2) != NULL)
+		{
+			// find originator mac in BATMAN table
+			if(strstr(batctl_line, originatorStr) != NULL)
+			{
+				// cutting the line to tokens until TQ field
+				ptr = strtok(batctl_line, " ");
+				for(int i = 0; i < 3; i++)
+				{
+					ptr = strtok(NULL, " ");
+				}
+				// cutting out the brackets
+				snprintf(TQstr, strlen(ptr)-1, "%s", ptr+1);
+				// convert the string to the integer type
+				TQint = strtol(TQstr, &ptr, 10);
+				break;
+			}
+		}
+		pclose(batctl_pipe2);
+	}
+	pclose(batctl_pipe);
+	return TQint;
 }
 
 // catch for errors
