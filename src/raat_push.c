@@ -165,7 +165,7 @@ void pushData(push *snd, flags *f)
 	fprintf(alfred_pipe, "%s*", snd->batmanAddr);
 
 	// put "none" if there are neither wan nor routes
-	if(snd->wanRouteExists == 0 && snd->localRoutes == NULL)
+	if(snd->wanRouteExists == 0 && snd->localRoutes[0] == 0)
 	{
 		fputs("none*", alfred_pipe);
 	}
@@ -177,7 +177,7 @@ void pushData(push *snd, flags *f)
 	}
 
 	// put the other routes if they exist
-	if(snd->localRoutes != NULL)
+	if(snd->localRoutes[0] != 0)
 	{
 		fprintf(alfred_pipe, "%s", snd->localRoutes);
 	}
