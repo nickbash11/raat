@@ -101,7 +101,7 @@ void flushRulesRoutes(void)
 	pclose(rules_read0);
 }
 
-void getRoutes(push *snd, pull *rcv, flags *f)
+void getSetRoutes(push *snd, pull *rcv, flags *f)
 {
 	int num, invalid;
 	char macBuf[18] = {0x0};

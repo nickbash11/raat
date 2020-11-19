@@ -70,6 +70,6 @@ void pushData(push *snd, flags *f);
 
 // common pull functions
 void flushRulesRoutes(void);
-void getRoutes(push *snd, pull *rcv, flags *f);
+void getSetRoutes(push *snd, pull *rcv, flags *f);
 void removeExpired(pull *rcv, flags *f);
 
