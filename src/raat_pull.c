@@ -501,7 +501,6 @@ void removeExpired(pull *rcv, flags *f)
 {
 	int flag;
 	char line[1000] = {0x0};
-	char ip_cmd[100] = {0x0};
 	char alfred_cmd[50] = {0x0};
 	char *p_route;
 
@@ -522,34 +521,22 @@ void removeExpired(pull *rcv, flags *f)
 		}
 		if(flag == 0)
 		{
-			// delete route table and hash as expired
-			sprintf(ip_cmd, "/sbin/ip route flush table %d", rcv->rt_table_id);
-			syslog(LOG_INFO, "%s", ip_cmd);
-			FILE* flush0 = popen(ip_cmd, "w");
-			errCatchFunc(flush0, 10);
-			pclose(flush0);
-
 			// send info about delete
 			syslog(LOG_INFO, "%s does not exist anymore", rcv->mac);
 
 			p_route = strtok(rcv->routes, "*");
 			while(p_route != NULL)
 			{
-				if(strstr(p_route, DEFAULT_LABEL) != NULL && rcv->isDefault == 1)
+				if(strcmp(p_route, "none") != 0 && strcmp(p_route, DEFAULT_LABEL) != 0)
 				{
-					sprintf(ip_cmd, "/sbin/ip rule del from all priority %d lookup %d", DEFAULT_PRIORITY, rcv->rt_table_id);
+					addDeleteRoute(rcv, p_route, "delete");
 				}
-				else
+				else if(strcmp(p_route, DEFAULT_LABEL) == 0 && rcv->isDefault == 1)
 				{
-					sprintf(ip_cmd, "/sbin/ip rule del from all to %s priority %d lookup %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
+					addDeleteRoute(rcv, DEFAULT_LABEL, "delete");
 				}
-				syslog(LOG_INFO, "%s", ip_cmd);
-				FILE* flush1 = popen(ip_cmd, "w");
-				errCatchFunc(flush0, 14);
-				pclose(flush1);
 				p_route = strtok(NULL, "*");
 			}
-
 
 			// -1 to nodes
 			nodes_counter--;
@@ -558,7 +545,6 @@ void removeExpired(pull *rcv, flags *f)
 			HASH_DELETE(hh2, nodes_by_mac, rcv);
 			HASH_DELETE(hh1, nodes_by_rt_table_id, rcv);
 			free(rcv);
-
 		}
 		pclose(alfred_pipe);
 	}
@@ -661,14 +647,14 @@ int getTQ(char *macAddr)
 	// converting bat mac address to originator mac address
 	sprintf(batctl_cmd, "/usr/sbin/batctl t %s", macAddr);
 	FILE* batctl_pipe = popen(batctl_cmd, "r");
-	errCatchFunc(batctl_pipe, 11);
+	errCatchFunc(batctl_pipe, 10);
 	if(fgets(batctl_line, sizeof(batctl_line), batctl_pipe))
 	{
 		// adding '*' to the gotten originator mac address
 		sprintf(originatorStr, "* %s", strtok(batctl_line, "\n"));
 		// show BATMAN table 
 		FILE* batctl_pipe2 = popen("/usr/sbin/batctl o -H", "r");
-		errCatchFunc(batctl_pipe, 12);
+		errCatchFunc(batctl_pipe, 11);
 		while(fgets(batctl_line, sizeof(batctl_line), batctl_pipe2) != NULL)
 		{
 			// find originator mac in BATMAN table
