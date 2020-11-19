@@ -13,9 +13,8 @@
 // the name of label for DEFAULT_LABEL presence on node
 #define DEFAULT_LABEL "default"
 
-void setDefaultRoute(pull *rcv, flags *f, char ip_cmd[]);
-void deleteRoute(pull *rcv, char *p_route, char ip_cmd[]);
-void addRoute(pull *rcv, char *p_route, char ip_cmd[]);
+void setDefaultRoute(pull *rcv, flags *f);
+void addDeleteRoute(pull *rcv, char *p_route, char *action);
 int payloadValidator(char line[]);
 int getTQ(char *macAddr);
 void errCatchFunc(FILE *pipe, int point);
@@ -110,7 +109,6 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 	char payloadBufValidate[1000] = {0x0};
 	char routesAnnounce[1000] = {0x0};
 	char line[1000] = {0x0};
-	char ip_cmd[100] = {0x0};
 	char *p_payloadGap;
 	char *p_route;
 	char *p_timestamp;
@@ -221,7 +219,7 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 					if(strcmp(p_payloadGap, "none") != 0  && strcmp(p_payloadGap, DEFAULT_LABEL) != 0)
 					{
 						// add routes
-						addRoute(rcv, p_payloadGap, ip_cmd);
+						addDeleteRoute(rcv, p_payloadGap, "add");
 					}
 
 					// write routes to structure
@@ -248,7 +246,7 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 				{
 					if(strcmp(p_route, "none") != 0  && strcmp(p_route, DEFAULT_LABEL) != 0)
 					{
-						deleteRoute(rcv, p_route, ip_cmd);
+						addDeleteRoute(rcv, p_route, "delete");
 					}
 					p_route = strtok(NULL, "*");
 				}
@@ -257,7 +255,7 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 				if(rcv->isDefault == 1)
 				{
 					syslog(LOG_INFO, "%s is no longer the default", rcv->mac);
-					deleteRoute(rcv, DEFAULT_LABEL, ip_cmd);
+					addDeleteRoute(rcv, DEFAULT_LABEL, "delete");
 				}
 
 				// -1 to nodes
@@ -300,7 +298,7 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 							{
 								if(strcmp(p_route, "none") != 0 && strcmp(p_route, DEFAULT_LABEL) != 0)
 								{
-									deleteRoute(rcv, p_route, ip_cmd);
+									addDeleteRoute(rcv, p_route, "delete");
 								}
 								p_route = strtok(NULL, "*");
 							}
@@ -330,7 +328,7 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 					{
 						if(strcmp(p_payloadGap, "none") != 0 && strcmp(p_payloadGap, DEFAULT_LABEL) != 0)
 						{
-							addRoute(rcv, p_payloadGap, ip_cmd);
+							addDeleteRoute(rcv, p_payloadGap, "add");
 						}
 					}
 
@@ -350,7 +348,7 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 				{
 					if(strcmp(p_route, "none") != 0 && strcmp(p_route, DEFAULT_LABEL) != 0)
 					{
-						deleteRoute(rcv, p_route, ip_cmd);
+						addDeleteRoute(rcv, p_route, "delete");
 					}
 				}
 				p_route = strtok(NULL, "*");
@@ -370,10 +368,10 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 	pclose(alfred_pipe);
 
 	// call the function to evaluate and set the default route and default rule
-	setDefaultRoute(rcv, f, ip_cmd);
+	setDefaultRoute(rcv, f);
 }
 
-void setDefaultRoute(pull *rcv, flags *f, char ip_cmd[])
+void setDefaultRoute(pull *rcv, flags *f)
 {
 	int tqTmp = 0;
 	int suitableDefaultId = 0;
@@ -424,7 +422,7 @@ void setDefaultRoute(pull *rcv, flags *f, char ip_cmd[])
 		if(rcv != NULL)
 		{
 			syslog(LOG_INFO, "%s is no longer the default", rcv->mac);
-			deleteRoute(rcv, DEFAULT_LABEL, ip_cmd);
+			addDeleteRoute(rcv, DEFAULT_LABEL, "delete");
 		}
 	}
 
@@ -436,62 +434,66 @@ void setDefaultRoute(pull *rcv, flags *f, char ip_cmd[])
 		if(rcv->isDefault == 0)
 		{
 			syslog(LOG_INFO, "%s is now the default", rcv->mac);
-			addRoute(rcv, DEFAULT_LABEL, ip_cmd);
+			addDeleteRoute(rcv, DEFAULT_LABEL, "add");
 		}
 	}
 }
 
-void deleteRoute(pull *rcv, char *p_route, char ip_cmd[])
+void addDeleteRoute(pull *rcv, char *p_route, char *action)
 {
-	sprintf(ip_cmd,"/sbin/ip route del %s via %s table %d", p_route, rcv->ipv4, rcv->rt_table_id);
+	char ip_cmd[100] = {0x0};
+
+	if(strcmp(action, "add") == 0)
+	{
+		sprintf(ip_cmd,"/sbin/ip route replace %s via %s table %d", p_route, rcv->ipv4, rcv->rt_table_id);
+	}
+	else if(strcmp(action, "delete") == 0)
+	{
+		sprintf(ip_cmd,"/sbin/ip route del %s via %s table %d", p_route, rcv->ipv4, rcv->rt_table_id);
+	}
 	syslog(LOG_INFO, "%s", ip_cmd);
-	FILE *del0 = popen(ip_cmd, "w");
-	errCatchFunc(del0, 6);
-	pclose(del0);
+	FILE *action_route = popen(ip_cmd, "w");
+	errCatchFunc(action_route, 6);
+	pclose(action_route);
 
 	if(strcmp(p_route, DEFAULT_LABEL) != 0)
 	{
-		sprintf(ip_cmd, "/sbin/ip rule del from all to %s priority %d table %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
+		if(strcmp(action, "add") == 0)
+		{
+			sprintf(ip_cmd, "/sbin/ip rule add from all to %s priority %d table %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
+		}
+		else if(strcmp(action, "delete") == 0)
+		{
+			sprintf(ip_cmd, "/sbin/ip rule del from all to %s priority %d table %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
+		}
 		syslog(LOG_INFO, "%s", ip_cmd);
-		FILE *del2 = popen(ip_cmd, "w");
-		errCatchFunc(del2, 7);
-		pclose(del2);
+		FILE *action_rule0 = popen(ip_cmd, "w");
+		errCatchFunc(action_rule0, 7);
+		pclose(action_rule0);
 	}
 	else
 	{
-		sprintf(ip_cmd, "/sbin/ip rule del from all priority %d table %d", DEFAULT_PRIORITY, rcv->rt_table_id);
+		if(strcmp(action, "add") == 0)
+		{
+			sprintf(ip_cmd, "/sbin/ip rule add from all priority %d table %d", DEFAULT_PRIORITY, rcv->rt_table_id);
+		}
+		else if(strcmp(action, "delete") == 0)
+		{
+			sprintf(ip_cmd, "/sbin/ip rule del from all priority %d table %d", DEFAULT_PRIORITY, rcv->rt_table_id);
+		}
 		syslog(LOG_INFO, "%s", ip_cmd);
-		FILE* delrule = popen(ip_cmd, "w");
-		errCatchFunc(delrule, 8);
-		pclose(delrule);
-		rcv->isDefault = 0;
-	}
-}
+		FILE* action_rule1 = popen(ip_cmd, "w");
+		errCatchFunc(action_rule1, 8);
+		pclose(action_rule1);
 
-void addRoute(pull *rcv, char *p_route, char ip_cmd[])
-{
-	sprintf(ip_cmd, "/sbin/ip route replace %s via %s table %d", p_route, rcv->ipv4, rcv->rt_table_id);
-	syslog(LOG_INFO, "%s", ip_cmd);
-	FILE *add0 = popen(ip_cmd, "w");
-	errCatchFunc(add0, 9);
-	pclose(add0);
-
-	if(strcmp(p_route, DEFAULT_LABEL) != 0)
-	{
-		sprintf(ip_cmd, "/sbin/ip rule add from all to %s priority %d table %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
-		syslog(LOG_INFO, "%s", ip_cmd);
-		FILE* add2 = popen(ip_cmd, "w");
-		errCatchFunc(add2, 10);
-		pclose(add2);
-	}
-	else
-	{
-		sprintf(ip_cmd, "/sbin/ip rule add from all priority %d table %d", DEFAULT_PRIORITY, rcv->rt_table_id);
-		syslog(LOG_INFO, "%s", ip_cmd);
-		FILE* addrule = popen(ip_cmd, "w");
-		errCatchFunc(addrule, 11);
-		pclose(addrule);
-		rcv->isDefault = 1;
+		if(strcmp(action, "add") == 0)
+		{
+			rcv->isDefault = 1;
+		}
+		else if(strcmp(action, "delete") == 0)
+		{
+			rcv->isDefault = 0;
+		}
 	}
 }
 
@@ -508,7 +510,7 @@ void removeExpired(pull *rcv, flags *f)
 	for(rcv=nodes_by_mac; rcv != NULL; rcv=rcv->hh2.next)
 	{
 		FILE* alfred_pipe = popen(alfred_cmd, "r");
-		errCatchFunc(alfred_pipe, 12);
+		errCatchFunc(alfred_pipe, 9);
 
 		flag = 0;
 		while(fgets(line, sizeof(line), alfred_pipe) != NULL)
@@ -524,7 +526,7 @@ void removeExpired(pull *rcv, flags *f)
 			sprintf(ip_cmd, "/sbin/ip route flush table %d", rcv->rt_table_id);
 			syslog(LOG_INFO, "%s", ip_cmd);
 			FILE* flush0 = popen(ip_cmd, "w");
-			errCatchFunc(flush0, 13);
+			errCatchFunc(flush0, 10);
 			pclose(flush0);
 
 			// send info about delete
@@ -659,14 +661,14 @@ int getTQ(char *macAddr)
 	// converting bat mac address to originator mac address
 	sprintf(batctl_cmd, "/usr/sbin/batctl t %s", macAddr);
 	FILE* batctl_pipe = popen(batctl_cmd, "r");
-	errCatchFunc(batctl_pipe, 15);
+	errCatchFunc(batctl_pipe, 11);
 	if(fgets(batctl_line, sizeof(batctl_line), batctl_pipe))
 	{
 		// adding '*' to the gotten originator mac address
 		sprintf(originatorStr, "* %s", strtok(batctl_line, "\n"));
 		// show BATMAN table 
 		FILE* batctl_pipe2 = popen("/usr/sbin/batctl o -H", "r");
-		errCatchFunc(batctl_pipe, 16);
+		errCatchFunc(batctl_pipe, 12);
 		while(fgets(batctl_line, sizeof(batctl_line), batctl_pipe2) != NULL)
 		{
 			// find originator mac in BATMAN table
