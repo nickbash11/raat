@@ -34,8 +34,8 @@ void flushRulesRoutes(void)
 	char *p_lineBuf;
 
 	// convert integer to string
-	sprintf(defaultPriorityBuf, "%d", DEFAULT_PRIORITY);
 	sprintf(regularPriorityBuf, "%d", REGULAR_PRIORITY);
+	sprintf(defaultPriorityBuf, "%d", DEFAULT_PRIORITY);
 
 	// open pipe for reading
 	FILE* rules_read0 = popen("/sbin/ip rule", "r");
@@ -45,63 +45,61 @@ void flushRulesRoutes(void)
 	// also we flush rules
 	while(fgets(line, sizeof(line), rules_read0) != NULL)
 	{
+		// flush tables with regular priority rules and then rules
 		if(strstr(line, regularPriorityBuf))
 		{
+			// length of the line subtract length of the REGULAR_PRIORITY and the line offset on length of REGULAR_PRIORITY + 2 chars forward
+			// for example the line has "30000:	from all to 172.16.250.0/27 lookup 459" - the lineBuf has "from all to 172.16.250.0/27 lookup 459"
 			snprintf(lineBuf, strlen(line)-strlen(regularPriorityBuf), "%s", line+strlen(regularPriorityBuf)+2);
 
+			// tokenize the line until the table number field
 			p_lineBuf = strtok(line, " ");
 			for(int i = 0; i < 5; i++)
 			{
 				p_lineBuf = strtok(NULL, " ");
 			}
+
+			// flush the route table
 			sprintf(ip_cmd, "/sbin/ip route flush table %s", p_lineBuf);
 			syslog(LOG_INFO, "%s", ip_cmd);
 			FILE* flush0 = popen(ip_cmd, "w");
 			errCatchFunc(flush0, 1);
 			pclose(flush0);
 
+			// delete the rule
 			sprintf(ip_cmd, "/sbin/ip rule del %s", lineBuf);
 			syslog(LOG_INFO, "%s", ip_cmd);
 			FILE* flush1 = popen(ip_cmd, "w");
 			errCatchFunc(flush1, 2);
 			pclose(flush1);
 		}
-	}
-	//close pipe
-	pclose(rules_read0);
-
-	// open pipe for reading
-	FILE* rules_read1 = popen("/sbin/ip rule", "r");
-	errCatchFunc(rules_read1, 3);
-
-	// here we get numbers of tables for default routes and flush them
-	// also we flush rules
-	while(fgets(line, sizeof(line), rules_read1) != NULL)
-	{
-		if(strstr(line, defaultPriorityBuf))
+		// flush tables with default priority rules and then rules
+		else if(strstr(line, defaultPriorityBuf))
 		{
 			snprintf(lineBuf, strlen(line)-strlen(defaultPriorityBuf), "%s", line+strlen(defaultPriorityBuf)+2);
 
+			// the default rule is shorter than regular, so it takes less iterations
 			p_lineBuf = strtok(line, " ");
 			for(int i = 0; i < 3; i++)
 			{
 				p_lineBuf = strtok(NULL, " ");
 			}
+
 			sprintf(ip_cmd, "/sbin/ip route flush table %s", p_lineBuf);
 			syslog(LOG_INFO, "%s", ip_cmd);
 			FILE* flush0 = popen(ip_cmd, "w");
-			errCatchFunc(flush0, 4);
+			errCatchFunc(flush0, 3);
 			pclose(flush0);
 
 			sprintf(ip_cmd, "/sbin/ip rule del %s", lineBuf);
 			syslog(LOG_INFO, "%s", ip_cmd);
 			FILE* flush1 = popen(ip_cmd, "w");
-			errCatchFunc(flush1, 5);
+			errCatchFunc(flush1, 4);
 			pclose(flush1);
 		}
 	}
-	// close pipe
-	pclose(rules_read1);
+	//close pipe
+	pclose(rules_read0);
 }
 
 void getRoutes(push *snd, pull *rcv, flags *f)
@@ -118,9 +116,10 @@ void getRoutes(push *snd, pull *rcv, flags *f)
 	char *p_timestamp;
 	char alfred_cmd[50] = {0x0};
 
+	// open the pipe for reading alfred data
 	sprintf(alfred_cmd, "/usr/sbin/alfred -r %d", f->dataType);
 	FILE* alfred_pipe = popen(alfred_cmd, "r");
-	errCatchFunc(alfred_pipe, 6);
+	errCatchFunc(alfred_pipe, 5);
 
 	while(fgets(line, sizeof(line), alfred_pipe) != NULL)
 	{
@@ -447,7 +446,7 @@ void deleteRoute(pull *rcv, char *p_route, char ip_cmd[])
 	sprintf(ip_cmd,"/sbin/ip route del %s via %s table %d", p_route, rcv->ipv4, rcv->rt_table_id);
 	syslog(LOG_INFO, "%s", ip_cmd);
 	FILE *del0 = popen(ip_cmd, "w");
-	errCatchFunc(del0, 9);
+	errCatchFunc(del0, 6);
 	pclose(del0);
 
 	if(strcmp(p_route, DEFAULT_LABEL) != 0)
@@ -455,7 +454,7 @@ void deleteRoute(pull *rcv, char *p_route, char ip_cmd[])
 		sprintf(ip_cmd, "/sbin/ip rule del from all to %s priority %d table %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
 		FILE *del2 = popen(ip_cmd, "w");
-		errCatchFunc(del2, 10);
+		errCatchFunc(del2, 7);
 		pclose(del2);
 	}
 	else
@@ -463,7 +462,7 @@ void deleteRoute(pull *rcv, char *p_route, char ip_cmd[])
 		sprintf(ip_cmd, "/sbin/ip rule del from all priority %d table %d", DEFAULT_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
 		FILE* delrule = popen(ip_cmd, "w");
-		errCatchFunc(delrule, 11);
+		errCatchFunc(delrule, 8);
 		pclose(delrule);
 		rcv->isDefault = 0;
 	}
@@ -474,7 +473,7 @@ void addRoute(pull *rcv, char *p_route, char ip_cmd[])
 	sprintf(ip_cmd, "/sbin/ip route replace %s via %s table %d", p_route, rcv->ipv4, rcv->rt_table_id);
 	syslog(LOG_INFO, "%s", ip_cmd);
 	FILE *add0 = popen(ip_cmd, "w");
-	errCatchFunc(add0, 12);
+	errCatchFunc(add0, 9);
 	pclose(add0);
 
 	if(strcmp(p_route, DEFAULT_LABEL) != 0)
@@ -482,7 +481,7 @@ void addRoute(pull *rcv, char *p_route, char ip_cmd[])
 		sprintf(ip_cmd, "/sbin/ip rule add from all to %s priority %d table %d", p_route, REGULAR_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
 		FILE* add2 = popen(ip_cmd, "w");
-		errCatchFunc(add2, 13);
+		errCatchFunc(add2, 10);
 		pclose(add2);
 	}
 	else
@@ -490,7 +489,7 @@ void addRoute(pull *rcv, char *p_route, char ip_cmd[])
 		sprintf(ip_cmd, "/sbin/ip rule add from all priority %d table %d", DEFAULT_PRIORITY, rcv->rt_table_id);
 		syslog(LOG_INFO, "%s", ip_cmd);
 		FILE* addrule = popen(ip_cmd, "w");
-		errCatchFunc(addrule, 14);
+		errCatchFunc(addrule, 11);
 		pclose(addrule);
 		rcv->isDefault = 1;
 	}
@@ -509,7 +508,7 @@ void removeExpired(pull *rcv, flags *f)
 	for(rcv=nodes_by_mac; rcv != NULL; rcv=rcv->hh2.next)
 	{
 		FILE* alfred_pipe = popen(alfred_cmd, "r");
-		errCatchFunc(alfred_pipe, 15);
+		errCatchFunc(alfred_pipe, 12);
 
 		flag = 0;
 		while(fgets(line, sizeof(line), alfred_pipe) != NULL)
@@ -525,7 +524,7 @@ void removeExpired(pull *rcv, flags *f)
 			sprintf(ip_cmd, "/sbin/ip route flush table %d", rcv->rt_table_id);
 			syslog(LOG_INFO, "%s", ip_cmd);
 			FILE* flush0 = popen(ip_cmd, "w");
-			errCatchFunc(flush0, 16);
+			errCatchFunc(flush0, 13);
 			pclose(flush0);
 
 			// send info about delete
@@ -544,7 +543,7 @@ void removeExpired(pull *rcv, flags *f)
 				}
 				syslog(LOG_INFO, "%s", ip_cmd);
 				FILE* flush1 = popen(ip_cmd, "w");
-				errCatchFunc(flush0, 17);
+				errCatchFunc(flush0, 14);
 				pclose(flush1);
 				p_route = strtok(NULL, "*");
 			}
@@ -660,14 +659,14 @@ int getTQ(char *macAddr)
 	// converting bat mac address to originator mac address
 	sprintf(batctl_cmd, "/usr/sbin/batctl t %s", macAddr);
 	FILE* batctl_pipe = popen(batctl_cmd, "r");
-	errCatchFunc(batctl_pipe, 18);
+	errCatchFunc(batctl_pipe, 15);
 	if(fgets(batctl_line, sizeof(batctl_line), batctl_pipe))
 	{
 		// adding '*' to the gotten originator mac address
 		sprintf(originatorStr, "* %s", strtok(batctl_line, "\n"));
 		// show BATMAN table 
 		FILE* batctl_pipe2 = popen("/usr/sbin/batctl o -H", "r");
-		errCatchFunc(batctl_pipe, 19);
+		errCatchFunc(batctl_pipe, 16);
 		while(fgets(batctl_line, sizeof(batctl_line), batctl_pipe2) != NULL)
 		{
 			// find originator mac in BATMAN table
