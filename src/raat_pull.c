@@ -332,7 +332,7 @@ void getSetRoutes(push *snd, pull *rcv, flags *f)
 						}
 					}
 
-					// put the routes to check for what to delete further
+					// put the routes to the temporary buffer to check for what to delete further
 					strcat(routesAnnounce, p_payloadGap);
 					strcat(routesAnnounce, "*");
 				}
@@ -340,7 +340,7 @@ void getSetRoutes(push *snd, pull *rcv, flags *f)
 				r++;
 			}
 
-			// checking for what routes need to delete
+			// checking for what routes need to delete, find last existing routes in the temporary buffer one by one
 			p_route = strtok(rcv->routes, "*");
 			while(p_route != NULL)
 			{
