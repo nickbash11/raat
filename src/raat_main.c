@@ -226,7 +226,7 @@ void checkArgs(flags *f, push *snd)
 	{
 		if(f->iflag == 1)
 		{
-			if(f->dataType < 0 || f->dataType > 255)
+			if(f->dataType < 64 || f->dataType > 255)
 			{
 				f->hflag = 1;
 			}
@@ -259,7 +259,7 @@ void checkArgs(flags *f, push *snd)
 		printf("	-l		Publish LAN routes. For now it finds br-lan interfaces\n");
 		printf("	-s 10		Range between push and pull operations\n\t\t\t(default 10 seconds), can be from 1 to 60\n");
 		printf("	-b 5		How many times to wait until a node will be\n\t\t\tconsidered as a dead (default 5 times). It\n\t\t\tdepends on -s and can be from 1 to 30\n");
-		printf("	-t 100		Data type in alfred space, from 0 to 255\n");
+		printf("	-t 100		Data type in alfred space, from 64 to 255\n");
 		printf("	-D		Enable debug mode\n");
 		printf("	-h		Show this help\n");
 		exit(1);
