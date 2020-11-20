@@ -216,6 +216,7 @@ void getSetRoutes(push *snd, pull *rcv, flags *f)
 				}
 				else
 				{
+					// ignore "none" and "default"
 					if(strcmp(p_payloadGap, "none") != 0  && strcmp(p_payloadGap, DEFAULT_LABEL) != 0)
 					{
 						// add routes
@@ -244,6 +245,7 @@ void getSetRoutes(push *snd, pull *rcv, flags *f)
 				p_route = strtok(rcv->routes, "*");
 				while(p_route != NULL)
 				{
+					// ignore "none" and "default"
 					if(strcmp(p_route, "none") != 0  && strcmp(p_route, DEFAULT_LABEL) != 0)
 					{
 						addDeleteRoute(rcv, p_route, "delete");
@@ -296,6 +298,7 @@ void getSetRoutes(push *snd, pull *rcv, flags *f)
 							p_route = strtok(rcv->routes, "*");
 							while(p_route != NULL)
 							{
+								// ignore "none" and "default"
 								if(strcmp(p_route, "none") != 0 && strcmp(p_route, DEFAULT_LABEL) != 0)
 								{
 									addDeleteRoute(rcv, p_route, "delete");
@@ -324,8 +327,10 @@ void getSetRoutes(push *snd, pull *rcv, flags *f)
 				else
 				{
 					// checking for what routes need to add
+					// if the route does not exist in rcv->routes - add that
 					if(strstr(rcv->routes, p_payloadGap) == NULL)
 					{
+						// ignore "none" and "default"
 						if(strcmp(p_payloadGap, "none") != 0 && strcmp(p_payloadGap, DEFAULT_LABEL) != 0)
 						{
 							addDeleteRoute(rcv, p_payloadGap, "add");
@@ -341,11 +346,13 @@ void getSetRoutes(push *snd, pull *rcv, flags *f)
 			}
 
 			// checking for what routes need to delete, find last existing routes in the temporary buffer one by one
+			// if the route does not exist in routesAnnounce - delete that 
 			p_route = strtok(rcv->routes, "*");
 			while(p_route != NULL)
 			{
 				if(strstr(routesAnnounce, p_route) == NULL)
 				{
+					// ignore "none" and "default"
 					if(strcmp(p_route, "none") != 0 && strcmp(p_route, DEFAULT_LABEL) != 0)
 					{
 						addDeleteRoute(rcv, p_route, "delete");
