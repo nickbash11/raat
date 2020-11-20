@@ -443,6 +443,7 @@ void addDeleteRoute(pull *rcv, char *p_route, char *p_action)
 {
 	char ip_cmd[100] = {0x0};
 
+	// add/delete route to/from routing table
 	if(strcmp(p_action, "add") == 0)
 	{
 		sprintf(ip_cmd,"/sbin/ip route replace %s via %s table %d", p_route, rcv->ipv4, rcv->rt_table_id);
@@ -456,6 +457,7 @@ void addDeleteRoute(pull *rcv, char *p_route, char *p_action)
 	errCatchFunc(route, 6);
 	pclose(route);
 
+	// add/delete rule to/from rules table
 	if(strcmp(p_route, DEFAULT_LABEL) != 0)
 	{
 		if(strcmp(p_action, "add") == 0)
