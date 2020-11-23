@@ -1,23 +1,11 @@
 #include "raat.h"
 
-// the define for default rule priority in iproute2 table
-#define DEFAULT_PRIORITY 33333
-// the define for regular rule priority in iproute2 table
-#define REGULAR_PRIORITY 30000
-// a minimal length of the string from alfred
-#define MIN_ALFRED_LENGTH_STRING 50
-// a maximum length of the string from alfred
-#define MAX_ALFRED_LENGTH_STRING 433
-// the max amount of nodes keeps in uthash
-#define NODES_MAX 255
-// the name of label for DEFAULT_LABEL presence on node
-#define DEFAULT_LABEL "default"
-
-void setDefaultRoute(pull *rcv, flags *f);
-void addDeleteRoute(pull *rcv, char *p_route, char *p_action);
-int payloadValidator(char line[]);
-int getTQ(char *macAddr);
-void errCatchFunc(FILE *pipe, int point);
+#define DEFAULT_PRIORITY 33333 // the define for default rule priority in iproute2 table
+#define REGULAR_PRIORITY 30000 // the define for regular rule priority in iproute2 table
+#define MIN_ALFRED_LENGTH_STRING 50 // a minimal length of the string from alfred
+#define MAX_ALFRED_LENGTH_STRING 433 // a maximum length of the string from alfred
+#define NODES_MAX 255 // the max amount of nodes keeps in uthash
+#define DEFAULT_LABEL "default" // the name of label for DEFAULT_LABEL presence on node
 
 static int nodes_counter = 0;
 

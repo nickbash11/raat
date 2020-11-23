@@ -5,6 +5,7 @@
 #include <time.h>
 #include <errno.h>
 #include <ctype.h>
+#include <dirent.h>
 
 #include <syslog.h>
 #include <signal.h>
@@ -16,6 +17,9 @@
 #include <netinet/in.h>
 #include <net/if.h>
 #include <arpa/inet.h>
+
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 #include "uthash.h"
 
@@ -61,15 +65,26 @@ typedef struct {
 	int localRoutesCount;
 } push;
 
-// common push functions
+// main functions
+void checkArgs(flags *f, push *snd);
+void daemonize(void);
+int setPid(void);
+pid_t proc_find(const char* name);
+
+// push functions
 void checkBatIf(push *snd);
 void getBatIpAddr(push *snd);
 void wanRouteExists(push *snd);
 void getLocalRoutes(push *snd);
 void pushData(push *snd, flags *f);
 
-// common pull functions
+// pull functions
 void flushRulesRoutes(void);
 void getSetRoutes(push *snd, pull *rcv, flags *f);
 void removeExpired(pull *rcv, flags *f);
+void setDefaultRoute(pull *rcv, flags *f);
+void addDeleteRoute(pull *rcv, char *p_route, char *p_action);
+int payloadValidator(char line[]);
+int getTQ(char *macAddr);
+void errCatchFunc(FILE *pipe, int point);
 

@@ -1,10 +1,4 @@
 #include "raat.h"
-#include <dirent.h>
-
-void checkArgs(flags *f, push *snd);
-void daemonize(void);
-int setPid(void);
-pid_t proc_find(const char* name);
 
 int main(int argc, char *argv[])
 {
