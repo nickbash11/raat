@@ -9,13 +9,7 @@ void checkBatIf(push *snd)
 	char line[1000] = {0x0};
 
 	FILE *fp = fopen("/proc/net/route", "r");
-	if( fp == NULL )
-	{
-		syslog(LOG_ERR, "Push point 0");
-		syslog(LOG_ERR, "Value of errno: %d", errno);
-		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-		exit(-1);
-	}
+	errCatchFunc(fp, "push.c", 0);
 
 	while(fgets(line, sizeof(line), fp) != NULL)
 	{
@@ -66,13 +60,7 @@ void wanRouteExists(push *snd)
 		char *p_lineBuf;
 
 		FILE *fp = fopen("/proc/net/route", "r");
-		if( fp == NULL )
-		{
-			syslog(LOG_ERR, "Push point 1");
-			syslog(LOG_ERR, "Value of errno: %d", errno);
-			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-			exit(-1);
-		}
+		errCatchFunc(fp, "push.c", 1);
 
 		while(fgets(line, sizeof(line), fp))
 		{
@@ -110,13 +98,7 @@ void getLocalRoutes(push *snd)
 
 		// open the pipe for ip
 		FILE* fp = popen("ip route", "r");
-		if( fp == NULL )
-		{
-			syslog(LOG_ERR, "Push point 2");
-			syslog(LOG_ERR, "Value of errno: %d", errno);
-			syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-			exit(-1);
-		}
+		errCatchFunc(fp, "push.c", 2);
 
 		// if the line is not NULL then
 		while(fgets(line, sizeof(line), fp) != NULL)
@@ -149,13 +131,7 @@ void pushData(push *snd, flags *f)
 
 	// open the alfred pipe to push
 	FILE* alfred_pipe = popen(alfred_cmd, "w");
-	if(alfred_pipe == NULL)
-	{
-		syslog(LOG_ERR, "Push point 3");
-		syslog(LOG_ERR, "Value of errno: %d", errno);
-		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-		exit(-1);
-	}
+	errCatchFunc(alfred_pipe, "push.c", 3);
 
 	// put unix timestamp first
 	int timestamp = (int)time(NULL);

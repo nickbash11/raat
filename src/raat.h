@@ -65,6 +65,9 @@ typedef struct {
 	int localRoutesCount;
 } push;
 
+// common functions
+void errCatchFunc(FILE *pipe, char *filename, int point);
+
 // main functions
 void checkArgs(flags *f, push *snd);
 void daemonize(void);
@@ -86,5 +89,4 @@ void setDefaultRoute(pull *rcv, flags *f);
 void addDeleteRoute(pull *rcv, char *p_route, char *p_action);
 int payloadValidator(char line[]);
 int getTQ(char *macAddr);
-void errCatchFunc(FILE *pipe, int point);
 

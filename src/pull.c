@@ -26,7 +26,7 @@ void flushRulesRoutes(void)
 
 	// open pipe for reading
 	FILE* rules_read0 = popen("/sbin/ip rule", "r");
-	errCatchFunc(rules_read0, 0);
+	errCatchFunc(rules_read0, "pull.c", 0);
 
 	// here we get numbers of tables for regular routes and flush them
 	// also we flush rules
@@ -50,14 +50,14 @@ void flushRulesRoutes(void)
 			sprintf(ip_cmd, "/sbin/ip route flush table %s", p_lineBuf);
 			syslog(LOG_INFO, "%s", ip_cmd);
 			FILE* flush0 = popen(ip_cmd, "w");
-			errCatchFunc(flush0, 1);
+			errCatchFunc(flush0, "pull.c", 1);
 			pclose(flush0);
 
 			// delete the rule
 			sprintf(ip_cmd, "/sbin/ip rule del %s", lineBuf);
 			syslog(LOG_INFO, "%s", ip_cmd);
 			FILE* flush1 = popen(ip_cmd, "w");
-			errCatchFunc(flush1, 2);
+			errCatchFunc(flush1, "pull.c", 2);
 			pclose(flush1);
 		}
 		// flush tables with default priority rules and then rules
@@ -75,13 +75,13 @@ void flushRulesRoutes(void)
 			sprintf(ip_cmd, "/sbin/ip route flush table %s", p_lineBuf);
 			syslog(LOG_INFO, "%s", ip_cmd);
 			FILE* flush0 = popen(ip_cmd, "w");
-			errCatchFunc(flush0, 3);
+			errCatchFunc(flush0, "pull.c", 3);
 			pclose(flush0);
 
 			sprintf(ip_cmd, "/sbin/ip rule del %s", lineBuf);
 			syslog(LOG_INFO, "%s", ip_cmd);
 			FILE* flush1 = popen(ip_cmd, "w");
-			errCatchFunc(flush1, 4);
+			errCatchFunc(flush1, "pull.c", 4);
 			pclose(flush1);
 		}
 	}
@@ -105,7 +105,7 @@ void getSetRoutes(push *snd, pull *rcv, flags *f)
 	// open the pipe for reading alfred data
 	sprintf(alfred_cmd, "/usr/sbin/alfred -r %d", f->dataType);
 	FILE* alfred_pipe = popen(alfred_cmd, "r");
-	errCatchFunc(alfred_pipe, 5);
+	errCatchFunc(alfred_pipe, "pull.c", 5);
 
 	while(fgets(line, sizeof(line), alfred_pipe) != NULL)
 	{
@@ -449,7 +449,7 @@ void addDeleteRoute(pull *rcv, char *p_route, char *p_action)
 	}
 	syslog(LOG_INFO, "%s", ip_cmd);
 	FILE *route = popen(ip_cmd, "w");
-	errCatchFunc(route, 6);
+	errCatchFunc(route, "pull.c", 6);
 	pclose(route);
 
 	// add/delete rule to/from rules table
@@ -479,7 +479,7 @@ void addDeleteRoute(pull *rcv, char *p_route, char *p_action)
 	}
 	syslog(LOG_INFO, "%s", ip_cmd);
 	FILE *rule = popen(ip_cmd, "w");
-	errCatchFunc(rule, 7);
+	errCatchFunc(rule, "pull.c", 7);
 	pclose(rule);
 }
 
@@ -495,7 +495,7 @@ void removeExpired(pull *rcv, flags *f)
 	for(rcv=nodes_by_mac; rcv != NULL; rcv=rcv->hh2.next)
 	{
 		FILE* alfred_pipe = popen(alfred_cmd, "r");
-		errCatchFunc(alfred_pipe, 8);
+		errCatchFunc(alfred_pipe, "pull.c", 8);
 
 		flag = 0;
 		while(fgets(line, sizeof(line), alfred_pipe) != NULL)
@@ -633,14 +633,14 @@ int getTQ(char *macAddr)
 	// converting bat mac address to originator mac address
 	sprintf(batctl_cmd, "/usr/sbin/batctl t %s", macAddr);
 	FILE* batctl_pipe = popen(batctl_cmd, "r");
-	errCatchFunc(batctl_pipe, 9);
+	errCatchFunc(batctl_pipe, "pull.c", 9);
 	if(fgets(batctl_line, sizeof(batctl_line), batctl_pipe))
 	{
 		// adding '*' to the gotten originator mac address
 		sprintf(originatorStr, "* %s", strtok(batctl_line, "\n"));
 		// show BATMAN table 
 		FILE* batctl_pipe2 = popen("/usr/sbin/batctl o -H", "r");
-		errCatchFunc(batctl_pipe, 10);
+		errCatchFunc(batctl_pipe, "pull.c", 10);
 		while(fgets(batctl_line, sizeof(batctl_line), batctl_pipe2) != NULL)
 		{
 			// find originator mac in BATMAN table
@@ -663,17 +663,5 @@ int getTQ(char *macAddr)
 	}
 	pclose(batctl_pipe);
 	return TQint;
-}
-
-// catch for errors
-void errCatchFunc(FILE *pipe, int point)
-{
-	if(pipe == NULL)
-	{
-		syslog(LOG_ERR, "Pull point %d", point);
-		syslog(LOG_ERR, "Value of errno: %d", errno);
-		syslog(LOG_ERR, "Error opening file: %s", strerror(errno));
-		exit(-1);
-	}
 }
 
