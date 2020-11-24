@@ -1,5 +1,7 @@
 #include "raat.h"
 
+pull *nodes_by_rt_table_id = NULL, *nodes_by_mac = NULL;
+
 int main(int argc, char *argv[])
 {
 	char *p_argvTmp;
@@ -21,10 +23,13 @@ int main(int argc, char *argv[])
 	f->breakUp = 5;
 	f->dataType = 100;
 
-	while((opt = getopt(argc, argv, "i:wls:b:t:Dh")) != -1)
+	while((opt = getopt(argc, argv, "i:wls:b:t:DhI")) != -1)
 	{
 		switch(opt)
 		{
+			case 'I':
+				f->Iflag = 1;
+				break;
 			case 'i':
 				f->iflag = 1;
 				snprintf(snd->batmanIf, 12, "%s", optarg);
@@ -116,6 +121,8 @@ int main(int argc, char *argv[])
 		// pull data (from raat_pull.c)
 		getSetRoutes(snd, rcv, f);
 		removeExpired(rcv, f);
+
+		setTheInfo(rcv, "write");
 	}
 
 	closelog();
@@ -124,6 +131,12 @@ int main(int argc, char *argv[])
 void checkArgs(flags *f, push *snd)
 {
 	int i;
+
+	if(f->Iflag == 1)
+	{
+		setTheInfo(0, "read");
+		exit(0);
+	}
 
 	// -i option
 	if(f->iflag == 1)

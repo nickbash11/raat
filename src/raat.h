@@ -35,6 +35,7 @@ typedef struct {
 	int bflag;
 	int tflag;
 	int Dflag;
+	int Iflag;
 	int breakUp;
 	int dataType;
 	int sleepTime;
@@ -65,7 +66,10 @@ typedef struct {
 	int localRoutesCount;
 } push;
 
+extern pull *nodes_by_rt_table_id, *nodes_by_mac;
+
 // common functions
+void setTheInfo(pull *rcv, char *action);
 void errCatchFunc(FILE *pipe, char *filename, int point);
 
 // main functions

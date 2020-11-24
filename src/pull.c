@@ -9,7 +9,7 @@
 
 static int nodes_counter = 0;
 
-static pull *nodes_by_rt_table_id = NULL, *nodes_by_mac = NULL;
+//pull *nodes_by_rt_table_id = NULL, *nodes_by_mac = NULL;
 
 void flushRulesRoutes(void)
 {
