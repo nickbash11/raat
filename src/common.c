@@ -36,12 +36,15 @@ void setTheInfo(pull *rcv, char *action)
 		// add last time
 		strcat(string, buf);
 		// add columns
-		strcat(string, "mac			originator		timestamp	ipv4		routes\n");
+		strcat(string, "mac			originator		timestamp	breakups	ipv4		routes\n");
 
 		for(rcv=nodes_by_mac; rcv != NULL; rcv=rcv->hh2.next)
 		{
-			sprintf(buf, "%s	%s	%d	%s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->ipv4, rcv->routes);
-			strcat(string, buf);
+			if(rcv->isDefault == 0)
+			{
+				sprintf(buf, "%s	%s	%d	%d		%s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4, rcv->routes);
+				strcat(string, buf);
+			}
 		}
 
 		strcat(string, "\n");
@@ -51,7 +54,7 @@ void setTheInfo(pull *rcv, char *action)
 			if(rcv->isDefault == 1)
 			{
 				strcat(string, "default route:\n");
-				sprintf(buf, "%s	%s	%d	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->ipv4);
+				sprintf(buf, "%s	%s	%d	%d		%s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4, rcv->routes);
 				strcat(string, buf);
 			}
 		}
