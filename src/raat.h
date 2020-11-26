@@ -93,5 +93,5 @@ void removeExpired(pull *rcv, flags *f);
 void setDefaultRoute(pull *rcv, flags *f);
 void addDeleteRoute(pull *rcv, char *p_route, char *p_action);
 int payloadValidator(char line[]);
-int getTQ(char *macAddr);
-void setOriginator(pull *rcv, char *macAddr);
+int getTQ(char *macAddrOrig);
+void setOriginatorMac(pull *rcv, char *macAddr);
