@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -O3
+CFLAGS=-Wall -Os
 
 raat: main.o push.o pull.o common.o
 	$(CC) -o raat main.o push.o pull.o common.o
