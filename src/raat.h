@@ -45,6 +45,7 @@ typedef struct {
 typedef struct {
 	int rt_table_id;
 	char mac[20]; 
+	char macOrig[20];
 	char ipv4[20];
 	char routes[500];
 	int tqDefault;
@@ -93,4 +94,4 @@ void setDefaultRoute(pull *rcv, flags *f);
 void addDeleteRoute(pull *rcv, char *p_route, char *p_action);
 int payloadValidator(char line[]);
 int getTQ(char *macAddr);
-
+void setOriginator(pull *rcv, char *macAddr);

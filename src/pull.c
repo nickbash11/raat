@@ -181,6 +181,9 @@ void getSetRoutes(push *snd, pull *rcv, flags *f)
 			HASH_ADD(hh1, nodes_by_rt_table_id, rt_table_id, sizeof(int), rcv);
 			HASH_ADD(hh2, nodes_by_mac, mac, strlen(rcv->mac), rcv);
 
+			// set originator mac from batman mac
+			setOriginator(rcv, rcv->mac);
+
 			// send info about
 			syslog(LOG_INFO, "%s is a new node", rcv->mac);
 
@@ -348,6 +351,9 @@ void getSetRoutes(push *snd, pull *rcv, flags *f)
 				}
 				p_route = strtok(NULL, "*");
 			}
+
+			// set originator mac from batman mac                                                                          
+			setOriginator(rcv, rcv->mac);
 
 			// reset routes to NULL
 			memset(rcv->routes, 0, sizeof(rcv->routes));
@@ -665,3 +671,19 @@ int getTQ(char *macAddr)
 	return TQint;
 }
 
+void setOriginator(pull *rcv, char *macAddr)
+{
+	char batctl_cmd[100] = {0x0};
+	char batctl_line[100] = {0x0};
+
+	// converting bat mac address to originator mac address
+	sprintf(batctl_cmd, "/usr/sbin/batctl t %s", macAddr);
+	FILE* batctl_pipe = popen(batctl_cmd, "r");
+	errCatchFunc(batctl_pipe, "pull.c", 10);
+	if(fgets(batctl_line, sizeof(batctl_line), batctl_pipe))
+	{
+		strcpy(rcv->macOrig, strtok(batctl_line, "\n"));
+	}
+
+	pclose(batctl_pipe);
+}
