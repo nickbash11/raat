@@ -182,7 +182,7 @@ void getSetRoutes(push *snd, pull *rcv, flags *f)
 			HASH_ADD(hh2, nodes_by_mac, mac, strlen(rcv->mac), rcv);
 
 			// set originator mac from batman mac
-			setOriginator(rcv, rcv->mac);
+			setOriginatorMac(rcv, rcv->mac);
 
 			// send info about
 			syslog(LOG_INFO, "%s is a new node", rcv->mac);
@@ -353,7 +353,7 @@ void getSetRoutes(push *snd, pull *rcv, flags *f)
 			}
 
 			// set originator mac from batman mac                                                                          
-			setOriginator(rcv, rcv->mac);
+			setOriginatorMac(rcv, rcv->mac);
 
 			// reset routes to NULL
 			memset(rcv->routes, 0, sizeof(rcv->routes));
@@ -392,7 +392,7 @@ void setDefaultRoute(pull *rcv, flags *f)
 		rcv->tqDefault = 0;
 		if(strstr(rcv->routes, DEFAULT_LABEL) != NULL && rcv->breakup_count < f->breakUp)
 		{
-			rcv->tqDefault = getTQ(rcv->mac);
+			rcv->tqDefault = getTQ(rcv->macOrig);
 		}
 		else
 		{
@@ -627,51 +627,42 @@ int payloadValidator(char line[])
 	return 0;
 }
 
-int getTQ(char *macAddr)
+int getTQ(char *macAddrOrig)
 {
-	char batctl_cmd[100] = {0x0};
 	char batctl_line[100] = {0x0};
 	char originatorStr[100] = {0x0};
 	char *ptr;
 	char TQstr[100] = {0x0};
 	int TQint = 0;
 
-	// converting bat mac address to originator mac address
-	sprintf(batctl_cmd, "/usr/sbin/batctl t %s", macAddr);
-	FILE* batctl_pipe = popen(batctl_cmd, "r");
+	// adding '*' to the gotten originator mac address
+	sprintf(originatorStr, "* %s", macAddrOrig);
+	// show BATMAN table 
+	FILE* batctl_pipe = popen("/usr/sbin/batctl o -H", "r");
 	errCatchFunc(batctl_pipe, "pull.c", 9);
-	if(fgets(batctl_line, sizeof(batctl_line), batctl_pipe))
+	while(fgets(batctl_line, sizeof(batctl_line), batctl_pipe) != NULL)
 	{
-		// adding '*' to the gotten originator mac address
-		sprintf(originatorStr, "* %s", strtok(batctl_line, "\n"));
-		// show BATMAN table 
-		FILE* batctl_pipe2 = popen("/usr/sbin/batctl o -H", "r");
-		errCatchFunc(batctl_pipe, "pull.c", 10);
-		while(fgets(batctl_line, sizeof(batctl_line), batctl_pipe2) != NULL)
+		// find originator mac in BATMAN table
+		if(strstr(batctl_line, originatorStr) != NULL)
 		{
-			// find originator mac in BATMAN table
-			if(strstr(batctl_line, originatorStr) != NULL)
+			// cutting the line to tokens until TQ field
+			ptr = strtok(batctl_line, " ");
+			for(int i = 0; i < 3; i++)
 			{
-				// cutting the line to tokens until TQ field
-				ptr = strtok(batctl_line, " ");
-				for(int i = 0; i < 3; i++)
-				{
-					ptr = strtok(NULL, " ");
-				}
-				// cutting out the brackets
-				snprintf(TQstr, strlen(ptr)-1, "%s", ptr+1);
-				// convert the string to the integer type
-				TQint = strtol(TQstr, &ptr, 10);
-				break;
+				ptr = strtok(NULL, " ");
 			}
+			// cutting out the brackets
+			snprintf(TQstr, strlen(ptr)-1, "%s", ptr+1);
+			// convert the string to the integer type
+			TQint = strtol(TQstr, &ptr, 10);
+			break;
 		}
-		pclose(batctl_pipe2);
 	}
 	pclose(batctl_pipe);
 	return TQint;
 }
 
-void setOriginator(pull *rcv, char *macAddr)
+void setOriginatorMac(pull *rcv, char *macAddr)
 {
 	char batctl_cmd[100] = {0x0};
 	char batctl_line[100] = {0x0};
