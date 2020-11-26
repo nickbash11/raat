@@ -28,15 +28,32 @@ void setTheInfo(pull *rcv, char *action)
 
 	if(strcmp(action, "write") == 0)
 	{
+		time_t now = time (0);
+		strftime (buf, 100, "last update: %Y-%m-%d %H:%M:%S\n\n", localtime (&now));
 
 		// copy the content of buffer to the segment
 		strcpy(string, "\0");
-		strcat(string, "mac			originator		timestamp	ip		default		routes\n");
+		// add last time
+		strcat(string, buf);
+		// add columns
+		strcat(string, "mac			originator		timestamp	ipv4		routes\n");
 
 		for(rcv=nodes_by_mac; rcv != NULL; rcv=rcv->hh2.next)
 		{
-			sprintf(buf, "%s	%s	%d	%s	%d		%s\n", rcv->mac, rcv->mac, rcv->node_timestamp, rcv->ipv4, rcv->isDefault, rcv->routes);
+			sprintf(buf, "%s	%s	%d	%s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->ipv4, rcv->routes);
 			strcat(string, buf);
+		}
+
+		strcat(string, "\n");
+
+		for(rcv=nodes_by_mac; rcv != NULL; rcv=rcv->hh2.next)
+		{
+			if(rcv->isDefault == 1)
+			{
+				strcat(string, "default route:\n");
+				sprintf(buf, "%s	%s	%d	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->ipv4);
+				strcat(string, buf);
+			}
 		}
 	}
 	else if(strcmp(action, "read") == 0)
