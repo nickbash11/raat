@@ -128,10 +128,9 @@ int main(int argc, char *argv[])
 		getSetRoutes(snd, rcv, f);
 		removeExpired(rcv, f);
 
-		setTheInfo(rcv, "write");
+		// organization table from struct and write it to shared memory
+		writeSharedMemory(rcv);
 	}
-
-	closelog();
 }
 
 void checkArgs(flags *f, push *snd)
@@ -140,7 +139,7 @@ void checkArgs(flags *f, push *snd)
 
 	if(f->Iflag == 1)
 	{
-		setTheInfo(0, "read");
+		readSharedMemory();
 		exit(0);
 	}
 
