@@ -1,7 +1,7 @@
 #include "raat.h"
 
-#define SIZE 65536
-#define KEY 7893245
+#define SHMSIZE 65536
+#define SHMKEY 7893245
 
 void readSharedMemory(void)
 {
@@ -9,7 +9,7 @@ void readSharedMemory(void)
 	char *string;
 
 	// set the id for payload segment
-	if ((shmid = shmget(KEY, SIZE, 0)) == -1)
+	if ((shmid = shmget(SHMKEY, SHMSIZE, 0)) == -1)
 	{
 		syslog(LOG_ERR, "shmget read");
 		perror("shmget");
@@ -37,7 +37,7 @@ void writeSharedMemory(pull *rcv)
 	char *string;
 	char buf[1024];
 
-	if ((shmid = shmget(KEY, SIZE, IPC_CREAT | 0644)) == -1)
+	if ((shmid = shmget(SHMKEY, SHMSIZE, IPC_CREAT | 0644)) == -1)
 	{
 		syslog(LOG_ERR, "shmget write");
 		perror("shmget");
@@ -93,7 +93,7 @@ void clearSharedMemory(void)
 	int shmid;
 
 	// set the id for payload segment
-	if ((shmid = shmget(KEY, SIZE, 0)) == -1)
+	if ((shmid = shmget(SHMKEY, SHMSIZE, 0)) == -1)
 	{
 		syslog(LOG_ERR, "shmget read");
 		perror("shmget");
