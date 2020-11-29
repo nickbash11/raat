@@ -272,7 +272,7 @@ void checkArgs(flags *f, push *snd)
 		printf("	-s 10		Range between push and pull operations\n\t\t\t(default 10 seconds), can be from 1 to 60\n");
 		printf("	-b 5		How many times to wait until a node will be\n\t\t\tconsidered as a dead (default 5 times). It\n\t\t\tdepends on -s and can be from 1 to 30\n");
 		printf("	-t 100		Data type in alfred space, from 64 to 255\n");
-		printf("	-D		Enable debug mode\n");
+		printf("	-I		Get the information from shared memory\n");
 		printf("	-h		Show this help\n");
 		exit(1);
 	}
