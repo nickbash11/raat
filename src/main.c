@@ -101,6 +101,12 @@ int main(int argc, char *argv[])
 	// go to daemon
 	daemonize();
 
+	// install SIGQUIT signal to clear shared memory
+	if (signal(SIGQUIT, SIGQUIT_handler) == SIG_ERR) {
+		printf("SIGQUIT install error\n");
+		exit(2);
+	}
+
 	// clear garbage routes before beginning (from raat_pull.c)
 	flushRulesRoutes();
 

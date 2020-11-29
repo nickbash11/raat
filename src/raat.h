@@ -72,6 +72,7 @@ extern pull *nodes_by_rt_table_id, *nodes_by_mac;
 // common functions
 void setTheInfo(pull *rcv, char *action);
 void errCatchFunc(FILE *pipe, char *filename, int point);
+void SIGQUIT_handler(int sig);
 
 // main functions
 void checkArgs(flags *f, push *snd);

@@ -9,12 +9,24 @@ void setTheInfo(pull *rcv, char *action)
 	char *string;
 	char buf[1024];
 
-	// set the id for payload segment
-	if ((shmid = shmget(KEY, SIZE, 0)) == -1)
+	if(strcmp(action, "read") == 0)
 	{
-		syslog(LOG_ERR, "shmget");
-		perror("shmget");
-		exit(-1);
+		// set the id for payload segment
+		if ((shmid = shmget(KEY, SIZE, 0)) == -1)
+		{
+			syslog(LOG_ERR, "shmget");
+			perror("shmget");
+			exit(-1);
+		}
+	}
+	else
+	{
+		if ((shmid = shmget(KEY, SIZE, IPC_CREAT | 0644)) == -1)
+		{
+			syslog(LOG_ERR, "shmget");
+			perror("shmget");
+			exit(-1);
+		}
 	}
 
 	// assign the segment to the pointer
@@ -66,6 +78,11 @@ void setTheInfo(pull *rcv, char *action)
 
 	// detach the segment
 	shmdt((void *) string);
+
+	if(strcmp(action, "clear") == 0)
+	{
+		shmctl(shmid, IPC_RMID, NULL);
+	}
 } 
 
 // catch for errors
@@ -79,4 +96,14 @@ void errCatchFunc(FILE *pipe, char *filename, int point)
 		exit(-1);
 	}
 }
+
+void SIGQUIT_handler(int sig)
+{                             
+	signal(sig, SIG_IGN);
+	syslog(LOG_INFO, "Goodbye...\n");
+
+	setTheInfo(0, "clear");
+
+	exit(3);
+}            
 
