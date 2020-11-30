@@ -34,7 +34,7 @@ typedef struct {
 	int sflag;
 	int bflag;
 	int tflag;
-	int Dflag;
+	int vflag;
 	int Iflag;
 	int breakUp;
 	int dataType;

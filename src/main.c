@@ -1,4 +1,5 @@
 #include "raat.h"
+#include "version.h"
 
 pull *nodes_by_rt_table_id = NULL, *nodes_by_mac = NULL;
 
@@ -23,10 +24,13 @@ int main(int argc, char *argv[])
 	f->breakUp = 5;
 	f->dataType = 100;
 
-	while((opt = getopt(argc, argv, "i:wls:b:t:DhI")) != -1)
+	while((opt = getopt(argc, argv, "i:wls:b:t:DhIv")) != -1)
 	{
 		switch(opt)
 		{
+			case 'v':
+				f->vflag = 1;
+				break;
 			case 'I':
 				f->Iflag = 1;
 				break;
@@ -51,9 +55,6 @@ int main(int argc, char *argv[])
 			case 't':
 				f->tflag = 1;
 				f->dataType = strtol(optarg, &p_argvTmp, 10);
-				break;
-			case 'D':
-				f->Dflag = 1;
 				break;
 			case 'h':
 				f->hflag = 1;
@@ -136,6 +137,12 @@ int main(int argc, char *argv[])
 void checkArgs(flags *f, push *snd)
 {
 	int i;
+
+	if(f->vflag == 1)
+	{
+		printf("%s\n", VERSION);
+		exit(0);
+	}
 
 	if(f->Iflag == 1)
 	{
@@ -249,19 +256,6 @@ void checkArgs(flags *f, push *snd)
 		}
 	}
 
-	// -D option
-	if(f->Dflag == 1)
-	{
-		if(f->iflag == 1)
-		{
-			//
-		}
-		else
-		{
-			f->hflag = 1;
-		}
-	}
-
 	// -h option
 	if(f->hflag == 1)
 	{
@@ -273,6 +267,7 @@ void checkArgs(flags *f, push *snd)
 		printf("	-b 5		How many times to wait until a node will be\n\t\t\tconsidered as a dead (default 5 times). It\n\t\t\tdepends on -s and can be from 1 to 30\n");
 		printf("	-t 100		Data type in alfred space, from 64 to 255\n");
 		printf("	-I		Get the information from shared memory\n");
+		printf("	-v		Show version\n");
 		printf("	-h		Show this help\n");
 		exit(1);
 	}
