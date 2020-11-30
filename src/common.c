@@ -67,7 +67,7 @@ void writeSharedMemory(pull *rcv, push *snd)
 	strcat(string, "mac			ipv4		routes\n");
 
 	// if there are nothing to push show "none" and go to 'skip' point
-	if(snd->wanRouteExists == 0 && snd->localRoutes[0] != 0)
+	if(snd->wanRouteExists == 0 && snd->localRoutes[0] == 0)
 	{
 		sprintf(buf, "%s	%s	none\n\n", getIfMac(snd->batmanIf), snd->batmanAddr);
 		goto skip;
