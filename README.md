@@ -45,6 +45,12 @@ In simple case you can only tell to the RAAT the BATMAN interface
 $ sudo ./raat -i bat0
 ```
 
+Or you would like to publish your lans and wan (if those are exist):
+
+```
+sudo ./raat -i bat0 -l -w
+```
+
 Then in a few moment later, you can see the status of the available routes by using option -I:
 
 ```
@@ -53,7 +59,7 @@ last update: 2020-11-30 16:34:44
 
 push:
 mac			ipv4		routes
-ea:59:11:5e:35:31	172.16.50.1	none
+ea:59:11:5e:35:31	172.16.50.1	default*172.16.50.0/27*
 
 pull:
 mac			originator		timestamp	breakups	ipv4		routes
@@ -85,9 +91,7 @@ $ sudo ip rule
 
 Where the priorities 30000 and 33333 are controlled by RAAT.
 
-To push local routes see options '-l' and '-w'
-
-To kill the daemon use:
+To kill the daemon properly use QUIT:
 
 ```
 kill -QUIT `cat /var/run/raat.pid`
