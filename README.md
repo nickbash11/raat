@@ -94,7 +94,7 @@ Where the priorities 30000 and 33333 are controlled by RAAT.
 To kill the daemon properly use QUIT:
 
 ```
-kill -QUIT `cat /var/run/raat.pid`
+$ sudo kill -QUIT `cat /var/run/raat.pid`
 ```
 
 ## OpenWRT
