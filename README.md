@@ -99,7 +99,7 @@ kill -QUIT `cat /var/run/raat.pid`
 
 ## OpenWRT
 
-First it has been developed for OpenWRT and testing on it, so you can find out how to use an OpenWRT SDK to compile RAAT for others than x86_64 platforms by going to [wiki page.](https://github.com/nickbash11/raat/wiki/RAAT-for-OpenWRT)
+Mainly it has been developed for OpenWRT and testing on it, so you can find out how to use an OpenWRT SDK to compile RAAT for others than x86_64 platforms by going to [wiki page.](https://github.com/nickbash11/raat/wiki/RAAT-for-OpenWRT)
 
 ## Command line options
 
