@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 		removeExpired(rcv, f);
 
 		// organization table from struct and write it to shared memory
-		writeSharedMemory(rcv);
+		writeSharedMemory(rcv, snd);
 	}
 }
 

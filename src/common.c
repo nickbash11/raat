@@ -31,7 +31,7 @@ void readSharedMemory(void)
 	shmdt((void *) string);
 }
 
-void writeSharedMemory(pull *rcv)
+void writeSharedMemory(pull *rcv, push *snd)
 {
 	int shmid;
 	char *string;
@@ -58,8 +58,26 @@ void writeSharedMemory(pull *rcv)
 
 	// copy the content of buffer to the segment
 	strcpy(string, "\0");
+
 	// add last time
 	strcat(string, buf);
+
+	// add push information
+	strcat(string, "push:\n");
+	strcat(string, "mac			ipv4		routes\n");
+	if(snd->wanRouteExists == 1)
+	{
+		sprintf(buf, "%s	%s	default*%s\n\n", getIfMac(snd->batmanIf), snd->batmanAddr, snd->localRoutes);
+	}
+	else
+	{
+		sprintf(buf, "%s	%s	%s\n\n", getIfMac(snd->batmanIf), snd->batmanAddr, snd->localRoutes);
+	}
+	strcat(string, buf);
+
+	// add pull information
+	strcat(string, "pull:\n");
+
 	// add columns
 	strcat(string, "mac			originator		timestamp	breakups	ipv4		routes\n");
 
@@ -116,6 +134,7 @@ void errCatchFunc(FILE *pipe, char *filename, int point)
 	}
 }
 
+// https://www.csl.mtu.edu/cs4411.ck/www/NOTES/signal/kill.html
 void SIGQUIT_handler(int sig)
 {                             
 	signal(sig, SIG_IGN);
@@ -127,3 +146,22 @@ void SIGQUIT_handler(int sig)
 	exit(3);
 }            
 
+char * getIfMac(char *ifName)
+{
+	char buf[100] = {0x0};
+	static char mac[32] = {0x0};
+
+	sprintf(buf, "/sys/class/net/%s/address", ifName);
+	FILE *fp = fopen(buf, "r");
+	errCatchFunc(fp, "common.c", 0);
+
+	if(fgets(mac, sizeof(mac), fp) != NULL)
+	{
+		fclose(fp);
+		return strtok(mac, "\n");
+	}
+
+	fclose(fp);
+
+	return 0;
+}
