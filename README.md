@@ -15,7 +15,7 @@ The example of such network presented on the screen below, where the batman inte
 ![Concept of network](https://github.com/nickbash11/raat/blob/master/raat-network.png)
 
 
-For example, we want the PC2 could reach to the PC4 and vice versa, so we have to do some manupilations with iproute2 command line:
+For example, we want the PC2 could reach to the PC4 and vice versa, so we have to do some manupilations with iproute2 command line like that:
 
 On the NODE04:
 ```ip route add 172.16.200.0/27 via 172.16.200.1```
@@ -25,24 +25,87 @@ On the NODE03:
 
 Then PC2 and PC4 will be able to see each other, so, the **raat** daemon doing this automatically through A.L.F.R.E.D.
 
+It pushes its own routes to and pulls them from other participants of the MESH network. Now it uses iproute2 via pipe to manage routing table.
+
+## Get and compilation
+
+```
+$ git clone https://github.com/nickbash11/raat.git
+$ cd raat/src
+$ make && strip raat
+```
+
+## Use
+
+In simple case you can only tell to the RAAT the BATMAN interface
+
+```
+$ sudo ./raat -i bat0
+```
+
+Then in a few moment later, you can see the status of the available routes by using option -I:
+
+```
+$ sudo ./raat -I
+last update: 2020-11-30 16:34:44
+
+push:
+mac			ipv4		routes
+ea:59:11:5e:35:31	172.16.50.1	default*172.16.50.0/27*
+
+pull:
+mac			originator		timestamp	breakups	ipv4		routes
+b6:95:72:31:11:d5	00:00:00:dd:aa:cc	1606743271	0		172.16.210.1	default*172.16.210.0/27*
+a2:c5:b0:c1:41:90	08:00:27:b5:63:b1	1606743275	0		172.16.230.1	172.16.230.0/27*
+62:61:ac:d8:b3:60	08:00:27:9f:d5:27	1606743276	0		172.16.200.1	172.16.200.0/27*192.168.1.0/24*
+ba:c4:99:89:8b:61	00:00:22:ee:cc:dd	1606743273	0		172.16.250.1	172.16.250.0/27*
+
+default route:
+4e:20:5a:01:e4:33	00:00:00:44:22:11	1606743274	0		172.16.100.1	default*172.16.100.0/27*
+
+```
+
+At the same time you can see in your rule table something like:
+
+```
+$ sudo ip rule
+0:	from all lookup local 
+30000:	from all to 172.16.210.0/27 lookup 858 
+30000:	from all to 172.16.230.0/27 lookup 459 
+30000:	from all to 172.16.200.0/27 lookup 573 
+30000:	from all to 192.168.1.0/24 lookup 573 
+30000:	from all to 172.16.100.0/27 lookup 336 
+30000:	from all to 172.16.250.0/27 lookup 536 
+32766:	from all lookup main 
+32767:	from all lookup default 
+33333:	from all lookup 336 
+```
+
+Where the priorities 30000 and 33333 are controlled by RAAT.
+
+## OpenWRT
+
+First it has been developed for OpenWRT and testing on it, so you can find out how to use an OpenWRT SDK to compile RAAT for others than x86_64 platforms by going to [wiki page.](https://github.com/nickbash11/raat/wiki/RAAT-for-OpenWRT)
+
 ## Command line options
 
 ```
 Usage: raat -i bat0
 
-	-i	Batman or bridge interface which contains batman
-		interface. This interface's ipv4 address
-		will be announced as a route for other nodes 
-	-w	Publish WAN interface as a default route>
-	-l	Publish LAN routes. For now it finds br-lan interfaces
-	-s 10	Range between push and pull operations
-		(default 10 seconds), can be from 1 to 60
-	-b 5	How many times to wait until a node will be
-		considered as a dead (default 5 times). It
-		depends on -s and can be from 1 to 30
-	-t 100	Data type in alfred space, from 0 to 255
-	-D	Enable debug mode
-	-h	Show this help
+	-i interface	Batman or bridge interface which contains batman
+			interface. This interface's ipv4 address
+			will be announced as a route for other nodes
+        -w		Publish WAN interface as a default route
+	-l		Publish LAN routes. For now it finds br-lan interfaces
+	-s 10		Range between push and pull operations
+			(default 10 seconds), can be from 1 to 60
+	-b 5		How many times to wait until a node will be
+			considered as a dead (default 5 times). It
+			depends on -s and can be from 1 to 30
+	-t 100		Data type in alfred space, from 64 to 255
+	-I		Get the information from shared memory
+	-v		Show version
+	-h		Show this help
 ```
 
 ## This page is still under construction
