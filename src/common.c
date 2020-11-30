@@ -126,9 +126,9 @@ void clearSharedMemory(void)
 	// set the id for payload segment
 	if ((shmid = shmget(SHMKEY, SHMSIZE, 0)) == -1)
 	{
-		syslog(LOG_ERR, "shmget read");
+		syslog(LOG_ERR, "shmget clear");
 		perror("shmget");
-		exit(-1);
+//		exit(-1);
 	}
 
 	// destroy the segment
@@ -154,6 +154,16 @@ void SIGQUIT_handler(int sig)
 	syslog(LOG_INFO, "Goodbye...\n");
 
 	clearSharedMemory();
+
+	if(remove("/var/run/raat.pid") == 0)
+	{
+		syslog(LOG_INFO, "PID file was successful deleted");
+	}
+	else
+	{
+		syslog(LOG_ERR, "PID file was not deleted");
+	}
+
 	closelog();
 
 	exit(3);
