@@ -27,6 +27,10 @@ Then PC2 and PC4 will be able to see each other, so, the **raat** daemon doing t
 
 It pushes its own routes to and pulls them from other participants of the MESH network. Now it uses iproute2 via pipe to manage routing table.
 
+## Default routes
+
+raat can pick the best quality default route by using TQ from "batctl o"
+
 ## Get and compilation
 
 ```
@@ -117,4 +121,9 @@ Usage: raat -i bat0
 	-h		Show this help
 ```
 
-## This page is still under construction
+## Thoughts
+
+This time raat uses timestamps for evaluate the availability of a node, when breakups exceed a threshold then a node means as a dead. I think that it can have another approach by using "TQ" or "last-seen" for this goal.
+
+Raat uses pipes for manage all its communications between alfred, ip routing and batman. Instead, it has to use native functions and sockets to communicate. UDS for alfred, functions from batctl, and netlink to control routing tables and rules.
+
