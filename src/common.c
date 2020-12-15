@@ -31,7 +31,7 @@ void readSharedMemory(void)
 	shmdt((void *) string);
 }
 
-void writeSharedMemory(pull *rcv, push *snd)
+void writeSharedMemory(flags *f, pull *rcv, push *snd)
 {
 	int shmid;
 	char *string;
@@ -98,7 +98,14 @@ void writeSharedMemory(pull *rcv, push *snd)
 	{
 		if(rcv->isDefault == 0)
 		{
-			sprintf(buf, "%s	%s	%d	%d		%s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4, rcv->routes);
+			if(rcv->breakup_count >= f->breakUp)
+			{
+				sprintf(buf, "%s	%s	%d	%d		%s	dead\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4);
+			}
+			else
+			{
+				sprintf(buf, "%s	%s	%d	%d		%s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4, rcv->routes);
+			}
 			strcat(string, buf);
 		}
 	}
