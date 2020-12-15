@@ -39,6 +39,13 @@ $ cd raat/src
 $ make && strip raat
 ```
 
+I compile it right on OpenWRT host, so it needs to install gcc and make
+
+```
+opkg update
+opkg install gcc make
+```
+
 ## Use
 
 **Of course, before using you have to have working BATMAN network and installed and running ALFRED daemon.**
@@ -46,19 +53,19 @@ $ make && strip raat
 In simple case you can only tell to the RAAT the BATMAN interface
 
 ```
-# ./raat -i bat0
+./raat -i bat0
 ```
 
 Or you would like to publish your lans and wan (if those are exist):
 
 ```
-# ./raat -i bat0 -l -w
+./raat -i bat0 -l -w
 ```
 
 Then in a few moment later, you can see the status of the available routes by using option -I:
 
 ```
-# ./raat -I
+./raat -I
 last update: 2020-11-30 16:34:44
 
 push:
@@ -78,7 +85,7 @@ default route:
 At the same time you can see in your rule table something like:
 
 ```
-# ip rule
+ip rule
 0:	from all lookup local 
 30000:	from all to 172.16.150.0/27 lookup 858
 30000:	from all to 172.16.200.0/27 lookup 573
@@ -93,10 +100,10 @@ Where the priorities 30000 and 33333 are controlled by RAAT.
 To kill the daemon properly use QUIT:
 
 ```
-$ sudo kill -QUIT `cat /var/run/raat.pid`
+kill -QUIT `cat /var/run/raat.pid`
 ```
 
-## OpenWRT
+## OpenWRT against x86_64
 
 Mainly it has been developed for OpenWRT and testing on it, so you can find out how to use an OpenWRT SDK to compile RAAT for other than x86_64 platforms by going to [wiki page.](https://github.com/nickbash11/raat/wiki/RAAT-for-OpenWRT)
 
