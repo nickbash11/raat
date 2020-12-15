@@ -46,19 +46,19 @@ $ make && strip raat
 In simple case you can only tell to the RAAT the BATMAN interface
 
 ```
-$ sudo ./raat -i bat0
+# ./raat -i bat0
 ```
 
 Or you would like to publish your lans and wan (if those are exist):
 
 ```
-sudo ./raat -i bat0 -l -w
+# ./raat -i bat0 -l -w
 ```
 
 Then in a few moment later, you can see the status of the available routes by using option -I:
 
 ```
-$ sudo ./raat -I
+# ./raat -I
 last update: 2020-11-30 16:34:44
 
 push:
@@ -78,7 +78,7 @@ default route:
 At the same time you can see in your rule table something like:
 
 ```
-$ sudo ip rule
+# ip rule
 0:	from all lookup local 
 30000:	from all to 172.16.150.0/27 lookup 858
 30000:	from all to 172.16.200.0/27 lookup 573
