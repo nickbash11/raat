@@ -1,0 +1,23 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=99
+
+RAAT="/usr/sbin/raat"
+PID="/var/run/raat.pid"
+
+start() {
+	if [ ! -f "$PID" ]; then
+		$RAAT -i bat0 -w -l
+	fi
+}
+ 
+stop() {
+	kill -QUIT $(cat $PID) 2>/dev/null
+}
+
+restart()
+{
+	stop
+	start
+}
