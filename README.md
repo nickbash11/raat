@@ -48,7 +48,7 @@ opkg install gcc make
 
 ## Use
 
-**Of course, before using you have to have working BATMAN network and installed and running ALFRED daemon.**
+**Of course, before using you have to have the working BATMAN network, installed and running ALFRED daemon.**
 
 In simple case you can only tell to the RAAT the BATMAN interface
 
