@@ -39,11 +39,11 @@ $ cd raat/src
 $ make && strip raat
 ```
 
-I compile it right on OpenWRT host, so it needs to install gcc and make
+I compile it right on OpenWRT host, so it needs to install gcc, make and git-http:
 
 ```
 opkg update
-opkg install gcc make
+opkg install gcc make gcc-http
 ```
 
 ## Use
