@@ -134,7 +134,7 @@ I test raat in virtualbox. For emulate wifi devices you can use the project from
 
 ## Thoughts
 
-* This time raat uses timestamps for evaluate the availability of a node, when breakups exceed a threshold then a node means as a dead. I think that it can have another approach by using "TQ" or "last-seen" for this goal.
+* This time raat uses timestamps for evaluate the availability of a node, when breakups exceed a threshold then a node means as a dead. I think it could have another approach by using "TQ" or "last-seen" for this aim.
 
-* Raat uses pipes for manage all its communications between alfred, ip routing and batman. Instead, it has to use native functions and sockets to communicate. UDS for alfred, functions from batctl, and netlink to control routing tables and rules.
+* Raat uses pipes for manage all its communications between alfred, iproute2 and batman. Instead, it has to use native functions and sockets to communicate. UDS for alfred, functions from batctl, and netlink to control routing tables and rules.
 
