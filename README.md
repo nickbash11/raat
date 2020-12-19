@@ -134,7 +134,7 @@ I test raat in virtualbox. For emulate wifi devices you can use the project from
 
 ## Thoughts
 
-* This time raat uses timestamps for evaluate the availability of a node, when breakups exceed a threshold then a node means as a dead. It was a good practice to use with pure ALFRED method, but, then I forced to use TQ for define the best default route from batctl... so it confuses me. I still think that the RAAT must be use only ALFRED.
+* This time raat uses timestamps for evaluate the availability of a node, when breakups exceed a threshold then a node means as a dead. It was a good practice to use with pure ALFRED method, but, then I forced to use TQ for define the best default route from batctl... so it confuses me. I still think that the RAAT must use only ALFRED.
 
 * Raat uses pipes for manage all its communications between alfred, iproute2 and batman. Instead, it has to use native functions and sockets to communicate. UDS for alfred, functions from batctl, and netlink to control routing tables and rules.
 
