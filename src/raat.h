@@ -71,7 +71,7 @@ extern pull *nodes_by_rt_table_id, *nodes_by_mac;
 
 // common functions
 void readSharedMemory(void);
-void writeSharedMemory(pull *rcv, push *snd);
+void writeSharedMemory(flags *f, pull *rcv, push *snd);
 void clearSharedMemory(void);
 void errCatchFunc(FILE *pipe, char *filename, int point);
 void SIGQUIT_handler(int sig);
