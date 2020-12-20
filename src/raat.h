@@ -51,8 +51,8 @@ typedef struct {
 	int tqDefault;
 	int isDefault;
 	int breakup_count;
-	int node_timestamp;
-	int node_timestamp_previous;
+	long node_timestamp;
+	long node_timestamp_previous;
 	UT_hash_handle hh1, hh2; 
 } pull;
 

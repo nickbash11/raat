@@ -100,11 +100,11 @@ void writeSharedMemory(flags *f, pull *rcv, push *snd)
 		{
 			if(rcv->breakup_count >= f->breakUp)
 			{
-				sprintf(buf, "%s	%s	%d	%d		%s	dead\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4);
+				sprintf(buf, "%s	%s	%ld	%d		%s	dead\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4);
 			}
 			else
 			{
-				sprintf(buf, "%s	%s	%d	%d		%s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4, rcv->routes);
+				sprintf(buf, "%s	%s	%ld	%d		%s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4, rcv->routes);
 			}
 			strcat(string, buf);
 		}
@@ -117,7 +117,7 @@ void writeSharedMemory(flags *f, pull *rcv, push *snd)
 		if(rcv->isDefault == 1)
 		{
 			strcat(string, "default route:\n");
-			sprintf(buf, "%s	%s	%d	%d		%s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4, rcv->routes);
+			sprintf(buf, "%s	%s	%ld	%d		%s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4, rcv->routes);
 			strcat(string, buf);
 		}
 	}
