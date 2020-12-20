@@ -90,9 +90,8 @@ void getLocalRoutes(push *snd)
 	{
 		char line[1000] = {0x0};
 		char *p_lineBuf;
+		int counter = 0;
 
-		// set counter to zero
-		snd->localRoutesCount = 0;
 		// reset localRoutes to NULL
 		memset(snd->localRoutes, 0, sizeof(snd->localRoutes));
 
@@ -108,10 +107,10 @@ void getLocalRoutes(push *snd)
 				p_lineBuf = strtok(line, " ");
 				strcat(snd->localRoutes, p_lineBuf);
 				strcat(snd->localRoutes, "*");
-				snd->localRoutesCount++;
+				counter++;
 
 				// the condition for the max quantity of local routes to push
-				if(snd->localRoutesCount == MAX_ROUTES)
+				if(counter == MAX_ROUTES)
 				{
 					break;
 				}
@@ -123,7 +122,6 @@ void getLocalRoutes(push *snd)
 
 void pushData(push *snd, flags *f)
 {
-	// open for Alfred's pipe
 	char alfred_cmd[50] = {0x0};  
 
 	// put the number of data type to the alfred pipe

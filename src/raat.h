@@ -64,7 +64,6 @@ typedef struct {
 	int wanPublish;
 	int lanPublish;
 	char localRoutes[512];
-	int localRoutesCount;
 } push;
 
 extern pull *nodes_by_rt_table_id, *nodes_by_mac;
