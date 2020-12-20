@@ -64,23 +64,23 @@ void writeSharedMemory(flags *f, pull *rcv, push *snd)
 
 	// add push information
 	strcat(string, "push:\n");
-	strcat(string, "mac			ipv4		routes\n");
+	strcat(string, "mac                ipv4		routes\n");
 
 	// if there are nothing to push show "none" and go to 'skip' point
 	if(snd->wanRouteExists == 0 && snd->localRoutes[0] == 0)
 	{
-		sprintf(buf, "%s	%s	none\n\n", getIfMac(snd->batmanIf), snd->batmanAddr);
+		sprintf(buf, "%s  %s	none\n\n", getIfMac(snd->batmanIf), snd->batmanAddr);
 		goto skip;
 	}
 
 	// otherwise show something
 	if(snd->wanRouteExists == 1)
 	{
-		sprintf(buf, "%s	%s	default*%s\n\n", getIfMac(snd->batmanIf), snd->batmanAddr, snd->localRoutes);
+		sprintf(buf, "%s  %s	default*%s\n\n", getIfMac(snd->batmanIf), snd->batmanAddr, snd->localRoutes);
 	}
 	else
 	{
-		sprintf(buf, "%s	%s	%s\n\n", getIfMac(snd->batmanIf), snd->batmanAddr, snd->localRoutes);
+		sprintf(buf, "%s  %s	%s\n\n", getIfMac(snd->batmanIf), snd->batmanAddr, snd->localRoutes);
 	}
 
 	skip:;
@@ -92,7 +92,7 @@ void writeSharedMemory(flags *f, pull *rcv, push *snd)
 	strcat(string, "pull:\n");
 
 	// add columns
-	strcat(string, "mac			originator		timestamp	breakups	ipv4		routes\n");
+	strcat(string, "mac                originator         timestamp   breakups  ipv4		routes\n");
 
 	for(rcv=nodes_by_mac; rcv != NULL; rcv=rcv->hh2.next)
 	{
@@ -100,11 +100,11 @@ void writeSharedMemory(flags *f, pull *rcv, push *snd)
 		{
 			if(rcv->breakup_count >= f->breakUp)
 			{
-				sprintf(buf, "%s	%s	%ld	%d		%s	dead\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4);
+				sprintf(buf, "%s  %s  %ld  %d         %s	dead\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4);
 			}
 			else
 			{
-				sprintf(buf, "%s	%s	%ld	%d		%s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4, rcv->routes);
+				sprintf(buf, "%s  %s  %ld  %d         %s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4, rcv->routes);
 			}
 			strcat(string, buf);
 		}
@@ -117,7 +117,7 @@ void writeSharedMemory(flags *f, pull *rcv, push *snd)
 		if(rcv->isDefault == 1)
 		{
 			strcat(string, "default route:\n");
-			sprintf(buf, "%s	%s	%ld	%d		%s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4, rcv->routes);
+			sprintf(buf, "%s  %s  %ld  %d         %s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->breakup_count, rcv->ipv4, rcv->routes);
 			strcat(string, buf);
 		}
 	}
