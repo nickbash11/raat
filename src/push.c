@@ -96,7 +96,7 @@ void getLocalRoutes(push *snd)
 		memset(snd->localRoutes, 0, sizeof(snd->localRoutes));
 
 		// open the pipe for ip
-		FILE* fp = popen("ip route", "r");
+		FILE* fp = popen("/sbin/ip route", "r");
 		errCatchFunc(fp, "push.c", 2);
 
 		// if the line is not NULL then
