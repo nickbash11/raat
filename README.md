@@ -69,16 +69,16 @@ Then in a few moment later, you can see the status of the available routes by us
 last update: 2020-11-30 16:34:44
 
 push:
-mac			ipv4		routes
-ea:59:11:5e:35:31	172.16.50.1	172.16.50.0/27*
+mac                ipv4		routes
+ea:59:11:5e:35:31  172.16.50.1	172.16.50.0/27*
 
 pull:
-mac			originator		timestamp	breakups	ipv4		routes
-b6:95:72:31:11:d5	00:00:00:dd:aa:cc	1606743271	0		172.16.150.1	172.16.150.0/27*
-a2:c5:b0:c1:41:90	08:00:27:b5:63:b1	1606743275	0		172.16.200.1	default*172.16.200.0/27*
+mac                originator         timestamp   breakups  ipv4		routes
+b6:95:72:31:11:d5  00:00:00:dd:aa:cc  1606743271  0         172.16.150.1	172.16.150.0/27*
+a2:c5:b0:c1:41:90  08:00:27:b5:63:b1  1606743275  0         172.16.200.1	default*172.16.200.0/27*
 
 default route:
-4e:20:5a:01:e4:33	00:00:00:44:22:11	1606743274	0		172.16.100.1	default*172.16.100.0/27*
+4e:20:5a:01:e4:33  00:00:00:44:22:11  1606743274  0         172.16.100.1	default*172.16.100.0/27*
 
 ```
 
