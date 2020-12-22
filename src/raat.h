@@ -32,11 +32,11 @@ typedef struct {
 	int wflag;
 	int lflag;
 	int sflag;
-	int bflag;
+	int mflag;
 	int tflag;
 	int vflag;
 	int Iflag;
-	int breakUp;
+	int miss;
 	int dataType;
 	int sleepTime;
 } flags;
@@ -50,7 +50,7 @@ typedef struct {
 	char routes[500];
 	int tqDefault;
 	int isDefault;
-	int breakup_count;
+	int miss_count;
 	long node_timestamp;
 	long node_timestamp_previous;
 	UT_hash_handle hh1, hh2; 

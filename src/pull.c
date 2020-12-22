@@ -278,10 +278,10 @@ void getSetRoutes(push *snd, pull *rcv, flags *f)
 					// if the timestamp status is not updated - no point to update routes, just skip
 					if(rcv->node_timestamp == rcv->node_timestamp_previous)
 					{
-						rcv->breakup_count++;
+						rcv->miss_count++;
 
 						// if breakup more than BREAKUP then delete all the rules and routes
-						if(rcv->breakup_count == f->breakUp)
+						if(rcv->miss_count == f->miss)
 						{
 							syslog(LOG_INFO, "%s is dead now", rcv->mac);
 
@@ -303,12 +303,12 @@ void getSetRoutes(push *snd, pull *rcv, flags *f)
 					}
 
 					// the node is back from dead
-					if(rcv->breakup_count >= f->breakUp)
+					if(rcv->miss_count >= f->miss)
 					{
 						syslog(LOG_INFO, "%s is alive now", rcv->mac);
 					}
 
-					rcv->breakup_count = 0;
+					rcv->miss_count = 0;
 					rcv->node_timestamp_previous = rcv->node_timestamp;
 				}
 				else if(r == -1)
@@ -390,7 +390,7 @@ void setDefaultRoute(pull *rcv, flags *f)
 
 		// find for default and set TQ variable if the default string was found
 		rcv->tqDefault = 0;
-		if(strstr(rcv->routes, DEFAULT_LABEL) != NULL && rcv->breakup_count < f->breakUp)
+		if(strstr(rcv->routes, DEFAULT_LABEL) != NULL && rcv->miss_count < f->miss)
 		{
 			rcv->tqDefault = getTQ(rcv->macOrig);
 		}

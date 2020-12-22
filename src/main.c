@@ -21,10 +21,10 @@ int main(int argc, char *argv[])
 
 	// initial state for options -s, -b and -t 
 	f->sleepTime = 10;
-	f->breakUp = 5;
+	f->miss = 5;
 	f->dataType = 100;
 
-	while((opt = getopt(argc, argv, "i:wls:b:t:DhIv")) != -1)
+	while((opt = getopt(argc, argv, "i:wls:m:t:DhIv")) != -1)
 	{
 		switch(opt)
 		{
@@ -48,9 +48,9 @@ int main(int argc, char *argv[])
 				f->sflag = 1;
 				f->sleepTime = strtol(optarg, &p_argvTmp, 10);
 				break;
-			case 'b':
-				f->bflag = 1;
-				f->breakUp = strtol(optarg, &p_argvTmp, 10);
+			case 'm':
+				f->mflag = 1;
+				f->miss = strtol(optarg, &p_argvTmp, 10);
 				break;
 			case 't':
 				f->tflag = 1;
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 					fprintf (stderr, "Option -%c requires an argument. Use -h for help\n", optopt);
 				else if (optopt == 's')
 					fprintf (stderr, "Option -%c requires an argument. Use -h for help\n", optopt);
-				else if (optopt == 'b')
+				else if (optopt == 'm')
 					fprintf (stderr, "Option -%c requires an argument. Use -h for help\n", optopt);
 				else if (optopt == 't')
 					fprintf (stderr, "Option -%c requires an argument. Use -h for help\n", optopt);
@@ -224,12 +224,12 @@ void checkArgs(flags *f, push *snd)
 		}
 	}
 
-	// -b option
-	if(f->bflag == 1)
+	// -m option
+	if(f->mflag == 1)
 	{
 		if(f->iflag == 1)
 		{
-			if(f->breakUp < 1 || f->breakUp > 30)
+			if(f->miss < 1 || f->miss > 30)
 			{
 				f->hflag = 1;
 			}
@@ -264,7 +264,7 @@ void checkArgs(flags *f, push *snd)
 		printf("        -w		Publish WAN interface as a default route\n");
 		printf("	-l		Publish LAN routes. For now it finds br-lan interfaces\n");
 		printf("	-s 10		Range between push and pull operations\n\t\t\t(default 10 seconds), can be from 1 to 60\n");
-		printf("	-b 5		How many times to wait until a node will be\n\t\t\tconsidered as a dead (default 5 times). It\n\t\t\tdepends on -s and can be from 1 to 30\n");
+		printf("	-m 5		How many times to wait until a node will be\n\t\t\tconsidered as a dead (default 5 times). It\n\t\t\tdepends on -s and can be from 1 to 30\n");
 		printf("	-t 100		Data type in alfred space, from 64 to 255\n");
 		printf("	-I		Get the information from shared memory\n");
 		printf("	-v		Show version\n");
