@@ -1,0 +1,8 @@
+config 'alfred' 'alfred'
+	option interface 'bat0'
+	option mode 'master'
+	option batmanif 'bat0'
+	option start_vis '0'
+	option run_facters '0'
+# REMOVE THIS LINE TO ENABLE ALFRED
+	option disabled '0'
