@@ -92,7 +92,7 @@ void writeSharedMemory(flags *f, pull *rcv, push *snd)
 	strcat(string, "pull:\n");
 
 	// add columns
-	strcat(string, "mac                originator         timestamp   miss  ipv4		routes\n");
+	strcat(string, "mac                originator         timestamp   miss	ipv4		routes\n");
 
 	for(rcv=nodes_by_mac; rcv != NULL; rcv=rcv->hh2.next)
 	{
@@ -100,11 +100,11 @@ void writeSharedMemory(flags *f, pull *rcv, push *snd)
 		{
 			if(rcv->miss_count >= f->miss)
 			{
-				sprintf(buf, "%s  %s  %ld  %d     %s	dead\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->miss_count, rcv->ipv4);
+				sprintf(buf, "%s  %s  %ld  %d	%s	dead\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->miss_count, rcv->ipv4);
 			}
 			else
 			{
-				sprintf(buf, "%s  %s  %ld  %d     %s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->miss_count, rcv->ipv4, rcv->routes);
+				sprintf(buf, "%s  %s  %ld  %d	%s	%s\n", rcv->mac, rcv->macOrig, rcv->node_timestamp, rcv->miss_count, rcv->ipv4, rcv->routes);
 			}
 			strcat(string, buf);
 		}
