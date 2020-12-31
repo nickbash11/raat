@@ -178,20 +178,24 @@ void SIGQUIT_handler(int sig)
 
 char * getIfMac(char *ifName)
 {
-	char buf[100] = {0x0};
+	static char buf[100] = {0x0};
 	static char mac[32] = {0x0};
 
 	sprintf(buf, "/sys/class/net/%s/address", ifName);
 	FILE *fp = fopen(buf, "r");
-	errCatchFunc(fp, "common.c", 0);
-
-	if(fgets(mac, sizeof(mac), fp) != NULL)
+	if(fp)
 	{
-		fclose(fp);
-		return strtok(mac, "\n");
+		if(fgets(mac, sizeof(mac), fp) != NULL)
+		{
+			fclose(fp);
+			return strtok(mac, "\n");
+		}
 	}
-
-	fclose(fp);
+	else
+	{
+		sprintf(buf, "%s does not exist\n", ifName);
+		return buf;
+	}
 
 	return 0;
 }
