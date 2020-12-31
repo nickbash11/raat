@@ -14,6 +14,7 @@ start() {
  
 stop() {
 	kill -QUIT $(cat $PID) 2>/dev/null
+	rm -f $PID
 }
 
 restart()
