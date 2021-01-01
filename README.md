@@ -4,9 +4,9 @@
 
 This is a concept of the dynamic announce mechanism which uses B.A.T.M.A.N. and A.L.F.R.E.D. as a background for spreading and getting static routes between MESH nodes without any other dynamic route protocols.
 
-The idea was taken from BMX6/BMX7 mesh daemon, which is able to use a global cloud network and share local networks behind them between each other. So, I decided to do something like that with batman-adv, but nothing BGP/OLSR addition protocols.
+The idea was taken from BMX6/BMX7/OLSR mesh daemons, which are able to use a global cloud network and share local networks behind them between each other. In mesh-specific protocols it is called the HNA (host and network association).
 
-It uses [UTHASH](https://troydhanson.github.io/uthash/) macros header to implement holding the information about nodes and routes in memory.
+RAAT uses [UTHASH](https://troydhanson.github.io/uthash/) to implement the method to hold the information about nodes and routes.
 
 ## How it works
 
@@ -23,13 +23,13 @@ On the NODE04:
 On the NODE03:
 ```ip route add 172.16.150.0/27 via 172.16.150.1```
 
-Then PC2 and PC4 will be able to see each other, so, the **raat** daemon doing this automatically through A.L.F.R.E.D.
+Then PC2 and PC4 will be able to see each other, so, the RAAT daemon doing this automatically through A.L.F.R.E.D.
 
 It pushes its own routes to and pulls them from other participants of the MESH network. Now it uses iproute2 via pipe to manage routing table.
 
 ## Default routes
 
-raat can pick the best quality default route by using TQ from "batctl o"
+RAAT can pick the best quality default route by using TQ from "batctl o"
 
 ## Get and compilation
 
@@ -48,7 +48,8 @@ opkg install gcc make gcc-http
 
 ## Use
 
-**Of course, before using you have to have the working BATMAN network, installed and running ALFRED daemon.**
+**Of course, before using you have to have the working BATMAN network, also installed and running ALFRED daemon.**
+**You can find all examples in the appropriate directory (openwrt-configs).**
 
 In simple case you can only tell to the RAAT the BATMAN interface
 
@@ -103,9 +104,9 @@ To kill the daemon properly use QUIT:
 kill -QUIT `cat /var/run/raat.pid`
 ```
 
-## OpenWRT against x86_64
+## OpenWrt against x86_64
 
-Mainly it has been developed for OpenWRT and testing on it, so you can find out how to use an OpenWRT SDK to compile RAAT for other than x86_64 platforms by going to [wiki page.](https://github.com/nickbash11/raat/wiki/RAAT-for-OpenWRT)
+Mainly it has been developed for OpenWrt and testing on it, so you can find out how to use an OpenWrt SDK to compile RAAT for other than x86_64 platforms by going to [wiki page.](https://github.com/nickbash11/raat/wiki/RAAT-for-OpenWRT)
 
 ## Command line options
 
@@ -130,11 +131,11 @@ Usage: raat -i bat0
 
 ## Testing
 
-I test raat in virtualbox. For emulate wifi devices you can use the project from [Raizo62](https://github.com/Raizo62/vwifi)
+I have been testing RAAT in virtualbox. For emulate wifi devices you can use the project from [Raizo62](https://github.com/Raizo62/vwifi)
 
 ## Thoughts
 
-* This time raat uses timestamps for evaluate the availability of a node, when breakups exceed a threshold then a node considers as a dead. It was a good practice to use with pure ALFRED method, but, then I forced to use TQ for define the best default route from batctl... so it confuses me. I still think that the RAAT must use only ALFRED.
+* This time RAAT uses timestamps for evaluate the availability of a node, when breakups exceed a threshold then a node considers as a dead. It was a good practice to use with pure ALFRED method, but, then I forced to use TQ for define the best default route from batctl... so it confuses me. I still think that the RAAT must use only ALFRED.
 
 * Raat uses pipes for manage all its communications between alfred, iproute2 and batman. Instead, it has to use native functions and sockets to communicate. UDS for alfred, functions from batctl, and netlink to control routing tables and rules.
 
