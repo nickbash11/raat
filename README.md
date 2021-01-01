@@ -49,7 +49,9 @@ opkg install gcc make gcc-http
 ## Use
 
 **Of course, before using you have to have the working BATMAN network, also installed and running ALFRED daemon.**
-**You can find all examples in the appropriate directory (openwrt-configs).**
+**Two things RAAT requres are: 1. bat0 must have an ipv4 address 2. ALFRED must listen on bat0 (-i bat0)**
+
+Anyway, you can find all the examples in the appropriate directory (openwrt-configs).
 
 In simple case you can only tell to the RAAT the BATMAN interface
 
