@@ -26,16 +26,6 @@ config interface 'lan'
 	option dns '8.8.8.8'
 	option ifname 'eth1'
 
-config interface 'vwifi'
-	option ifname 'eth2'
-	option proto 'static'
-	option ipaddr '192.168.255.10'
-	option netmask '255.255.255.0'
-
-config device 'eth1_mtu1536'
-	option name 'eth1'
-	option mtu '1536'
-
 config device 'eth1_20'
 	option type '8021ad'
 	option name 'eth1_20'

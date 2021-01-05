@@ -33,19 +33,11 @@ config interface 'vwifi'
         option ipaddr '192.168.255.30'
         option netmask '255.255.255.0'
 
-config device 'eth0_mtu1536'
-        option name 'eth0'
-        option mtu '1536'
-
 config device 'eth0_20'
         option type '8021ad'
         option name 'eth0_20'
         option ifname 'eth0'
         option vid '20'
-
-config device 'eth1_mtu1536'
-        option name 'eth1'
-        option mtu '1536'
 
 config device 'eth_eth1'
         option type '8021ad'
